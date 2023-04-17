@@ -2,10 +2,11 @@ import copy
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
+from common.realtime import sec_since_boot
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, CC_ONLY_CAR
+from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, CAR, CC_ONLY_CAR
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
@@ -27,6 +28,13 @@ class CarState(CarStateBase):
     self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
     self.single_pedal_mode = False
+
+    self.regenPaddlePressed = False
+    self.autoHold = CP.carFingerprint not in [CAR.BOLT_EUV, CAR.ACADIA] + CC_ONLY_CAR
+    self.autoHoldActive = False
+    self.autoHoldActivated = False
+    self.lastAutoHoldTime = 0.0
+    self.sessionInitTime = sec_since_boot()
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -81,6 +89,9 @@ class CarState(CarStateBase):
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
       self.single_pedal_mode = ret.gearShifter == GearShifter.low or pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1
 
+    # TODO: investigate this
+    # ret.brakePressed = ret.brakePressed or ret.regenBraking
+
     if self.CP.enableGasInterceptor:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
       ret.gasPressed = ret.gas > 15
@@ -120,6 +131,7 @@ class CarState(CarStateBase):
     if self.CP.enableGasInterceptor:  # Flip CC main logic when pedal is being used for long TODO: switch to cancel cc
       ret.cruiseState.available = (not ret.cruiseState.available)
       ret.accFaulted = False
+    self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
@@ -131,6 +143,8 @@ class CarState(CarStateBase):
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
     if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint in CC_ONLY_CAR:
       ret.cruiseState.speed = (pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"]) * CV.KPH_TO_MS
+
+    ret.autoHoldActivated = self.autoHoldActivated
 
     return ret
 
