@@ -1,4 +1,7 @@
-from selfdrive.car import make_can_msg
+import math
+
+from common.numpy_fast import clip
+from selfdrive.car import make_can_msg, create_gas_interceptor_command
 from selfdrive.car.gm.values import CAR
 
 
@@ -90,6 +93,41 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, enabled, near_s
   }
 
   return packer.make_can_msg("EBCMFrictionBrakeCmd", bus, values)
+
+
+def actuator_hystereses(final_pedal, pedal_steady):
+  # hyst params... TODO: move these to VehicleParams
+  pedal_hyst_gap = 0.01    # don't change pedal command for small oscillations within this value
+
+  # for small pedal oscillations within pedal_hyst_gap, don't change the pedal command
+  if math.isclose(final_pedal, 0.0):
+    pedal_steady = 0.
+  elif final_pedal > pedal_steady + pedal_hyst_gap:
+    pedal_steady = final_pedal - pedal_hyst_gap
+  elif final_pedal < pedal_steady - pedal_hyst_gap:
+    pedal_steady = final_pedal + pedal_hyst_gap
+  final_pedal = pedal_steady
+
+  return final_pedal, pedal_steady
+
+
+def create_gm_gas_interceptor_command(packer, actuators, idx, pedal_steady, long_active):
+  zero = 0.15625  # 40/256
+  if actuators.accel > 0.:
+    # Scales the accel from 0-1 to 0.156-1
+    pedal_gas = clip(((1 - zero) * actuators.accel + zero), 0., 1.)
+  else:
+    # if accel is negative, -0.1 -> 0.015625
+    pedal_gas = clip(zero + actuators.accel, 0., zero)  # Make brake the same size as gas, but clip to regen
+
+  # apply pedal hysteresis and clip the final output to valid values.
+  pedal_final, pedal_steady = actuator_hystereses(pedal_gas, pedal_steady)
+  pedal_gas = clip(pedal_final, 0., 1.)
+
+  if not long_active:
+    pedal_gas = 0.0  # May not be needed with the enable param
+
+  return create_gas_interceptor_command(packer, pedal_gas, idx), pedal_steady
 
 
 def create_acc_dashboard_command(packer, bus, enabled, target_speed_kph, lead_car_in_sight, fcw):
