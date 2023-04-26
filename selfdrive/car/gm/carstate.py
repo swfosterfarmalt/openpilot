@@ -117,7 +117,8 @@ class CarState(CarStateBase):
                       pt_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakeUnavailable"] == 1)
     if self.CP.carFingerprint in CC_ONLY_CAR:
       ret.accFaulted = False
-    if self.CP.enableGasInterceptor:
+    if self.CP.enableGasInterceptor:  # Flip CC main logic when pedal is being used for long TODO: switch to cancel cc
+      ret.cruiseState.available = (not ret.cruiseState.available)
       ret.accFaulted = False
 
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
