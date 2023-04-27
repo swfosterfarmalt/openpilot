@@ -108,7 +108,8 @@ class CarController:
           friction_brake_bus = CanBus.POWERTRAIN
 
         if CS.CP.enableGasInterceptor:
-          cmd, self.pedal_steady = gmcan.create_gm_gas_interceptor_command(self.packer_pt, actuators, idx, self.pedal_steady, CC.longActive)
+          do_pedal = CC.longActive and self.apply_brake == 0
+          cmd, self.pedal_steady = gmcan.create_gm_gas_interceptor_command(self.packer_pt, actuators, idx, self.pedal_steady, do_pedal)
           can_sends.append(cmd)
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.params.INACTIVE_REGEN, idx, CC.enabled, at_full_stop))
         else:
