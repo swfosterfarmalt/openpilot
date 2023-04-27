@@ -107,11 +107,10 @@ class CarController:
           at_full_stop = at_full_stop and actuators.longControlState == LongCtrlState.stopping
           friction_brake_bus = CanBus.POWERTRAIN
 
-        # BEGIN INTERCEPTOR ############################
         if CS.CP.enableGasInterceptor:
           cmd, self.pedal_steady = gmcan.create_gm_gas_interceptor_command(self.packer_pt, actuators, idx, self.pedal_steady, CC.longActive)
           can_sends.append(cmd)
-        # END INTERCEPTOR ############################
+          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.params.INACTIVE_REGEN, idx, CC.enabled, at_full_stop))
         else:
           # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
