@@ -120,7 +120,7 @@ class CarController:
         # Send dashboard UI commands (ACC status)
         send_fcw = hud_alert == VisualAlert.fcw
         can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, CC.enabled,
-                                                            hud_v_cruise * CV.MS_TO_KPH, hud_control.leadVisible, send_fcw))
+                                                            hud_v_cruise * CV.MS_TO_KPH, self.apply_brake == 0, send_fcw))
 
       # Radar needs to know current speed and yaw rate (50hz),
       # and that ADAS is alive (10hz)
@@ -136,11 +136,7 @@ class CarController:
         if self.frame % speed_and_accelerometer_step == 0:
           idx = (self.frame // speed_and_accelerometer_step) % 4
           can_sends.append(gmcan.create_adas_steering_status(CanBus.OBSTACLE, idx))
-          if self.apply_brake == 0:
-            out_speed = 40
-          else:
-            out_speed = 80
-          can_sends.append(gmcan.create_adas_accelerometer_speed_status(CanBus.OBSTACLE, out_speed, idx))
+          can_sends.append(gmcan.create_adas_accelerometer_speed_status(CanBus.OBSTACLE, CS.out.vEgo, idx))
 
       if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.params.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
