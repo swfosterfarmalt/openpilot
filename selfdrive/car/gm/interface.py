@@ -138,6 +138,11 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.VOLT:
       ret.minEnableSpeed = -1.
+
+      if 0x337 not in fingerprint[CanBus.CHASSIS]:
+        ret.minSteerSpeed = 0.
+        print("PACM missing, setting minSteerSpeed to 0")
+
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
