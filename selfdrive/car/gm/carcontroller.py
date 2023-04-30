@@ -101,19 +101,14 @@ class CarController:
       lkas_active = CC.latActive and CS.out.vEgo > 7 * CV.MPH_TO_MS
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_active))
 
-      pa_idx = self.frame % 4
-      pacm_active = CC.latActive and CS.out.vEgo <= 7 * CV.MPH_TO_MS
-      pacm_active |= False  # temporarily
-      pa_steer = self.get_pa_steer(CS, apply_steer)
-      can_sends.append(gmcan.create_parking_steering_control(self.packer_ch, CanBus.CHASSIS, pa_steer, pa_idx, pacm_active))
-
-      # if CS.out.vEgo < 10.1 * CV.KPH_TO_MS:
-      #   pa_active = CC.latActive and (self.pa_frames_active or pa_idx == 3)
-      #   self.pa_frames_active = self.pa_frames_active + 1 if pa_active else 0
-      # can_sends.append(
-      #   gmcan.create_parking_steering_control(
-      #     self.packer_ch, CanBus.CHASSIS, int(pa_steer), pa_idx, self.pa_frames_active
-      #   ))
+    pa_idx = self.frame % 4
+    pacm_active = CC.latActive and CS.out.vEgo <= 7 * CV.MPH_TO_MS
+    pacm_active &= False  # temporarily
+    if CS.out.vEgo < 7 * CV.MPH_TO_MS:
+      pa_active = CC.latActive and (self.pa_frames_active or pa_idx == 3)
+      self.pa_frames_active = self.pa_frames_active + 1 if pa_active else 0
+    pa_steer = self.get_pa_steer(CS, apply_steer)
+    can_sends.append(gmcan.create_parking_steering_control(self.packer_ch, CanBus.CHASSIS, pa_steer, pa_idx, pacm_active))
 
     if self.CP.openpilotLongitudinalControl:
       # Gas/regen, brakes, and UI commands - all at 25Hz
