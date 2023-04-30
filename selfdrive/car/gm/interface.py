@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import math
+
 from cereal import car
 from math import fabs, exp
 from panda import Panda
@@ -140,7 +142,7 @@ class CarInterface(CarInterfaceBase):
       ret.minEnableSpeed = -1.
 
       if 0x337 not in fingerprint[CanBus.CHASSIS]:
-        ret.minSteerSpeed = 0.
+        ret.minSteerSpeed = -math.inf
         print("PACM missing, setting minSteerSpeed to 0")
 
       ret.mass = 1607. + STD_CARGO_KG
