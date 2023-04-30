@@ -53,7 +53,7 @@ class CarController:
     else:
       pa_steer = CS.out.steeringAngleDeg * 16
     self.pa_q.append(CS.out.steeringAngleDeg)
-    return pa_steer
+    return int(pa_steer)
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
