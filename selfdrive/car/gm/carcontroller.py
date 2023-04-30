@@ -1,3 +1,5 @@
+from collections import deque
+
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp
@@ -29,6 +31,11 @@ class CarController:
     self.last_button_frame = 0
     self.cancel_counter = 0
 
+    self.pa_frames_active = 0
+    self.pa_steer_factor = 30
+    self.pa_lag = 4
+    self.pa_q = deque(maxlen=self.pa_lag)
+
     self.lka_steering_cmd_counter = 0
     self.lka_icon_status_last = (False, False)
 
@@ -37,6 +44,16 @@ class CarController:
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint]['chassis'])
+
+  def get_pa_steer(self, CS, apply_steer):
+    if self.pa_frames_active > 15:  # continue to forward PSCM for a few frames
+      pa_steer = apply_steer * self.pa_steer_factor
+    elif len(self.pa_q) == self.pa_lag:  # we observe 4 frame lag b/w PSCM and PACM steer
+      pa_steer = self.pa_q.popleft() * 16
+    else:
+      pa_steer = CS.out.steeringAngleDeg * 16
+    self.pa_q.append(CS.out.steeringAngleDeg)
+    return pa_steer
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -84,10 +101,19 @@ class CarController:
       lkas_active = CC.latActive and CS.out.vEgo > 7 * CV.MPH_TO_MS
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_active))
 
+      pa_idx = self.frame % 4
       pacm_active = CC.latActive and CS.out.vEgo <= 7 * CV.MPH_TO_MS
       pacm_active |= False  # temporarily
-      can_sends.append(gmcan.create_parking_steering_control(self.packer_ch, CanBus.CHASSIS, apply_steer, idx, pacm_active))
-      # TODO: PACM handshake
+      pa_steer = self.get_pa_steer(CS, apply_steer)
+      can_sends.append(gmcan.create_parking_steering_control(self.packer_ch, CanBus.CHASSIS, pa_steer, pa_idx, pacm_active))
+
+      # if CS.out.vEgo < 10.1 * CV.KPH_TO_MS:
+      #   pa_active = CC.latActive and (self.pa_frames_active or pa_idx == 3)
+      #   self.pa_frames_active = self.pa_frames_active + 1 if pa_active else 0
+      # can_sends.append(
+      #   gmcan.create_parking_steering_control(
+      #     self.packer_ch, CanBus.CHASSIS, int(pa_steer), pa_idx, self.pa_frames_active
+      #   ))
 
     if self.CP.openpilotLongitudinalControl:
       # Gas/regen, brakes, and UI commands - all at 25Hz
