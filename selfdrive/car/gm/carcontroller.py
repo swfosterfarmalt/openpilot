@@ -80,7 +80,14 @@ class CarController:
       self.last_steer_frame = self.frame
       self.apply_steer_last = apply_steer
       idx = self.lka_steering_cmd_counter % 4
-      can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
+
+      lkas_active = CC.latActive and CS.out.vEgo > 7 * CV.MPH_TO_MS
+      can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_active))
+
+      pacm_active = CC.latActive and CS.out.vEgo <= 7 * CV.MPH_TO_MS
+      pacm_active |= False  # temporarily
+      can_sends.append(gmcan.create_parking_steering_control(self.packer_ch, CanBus.CHASSIS, apply_steer, idx, pacm_active))
+      # TODO: PACM handshake
 
     if self.CP.openpilotLongitudinalControl:
       # Gas/regen, brakes, and UI commands - all at 25Hz
