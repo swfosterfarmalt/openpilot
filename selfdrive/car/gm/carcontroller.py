@@ -80,6 +80,12 @@ class CarController:
 
     self.lka_steering_cmd_counter += 1 if CS.loopback_lka_steering_cmd_updated else 0
 
+    if CC.latActive:
+      new_steer = int(round(actuators.steer * self.params.STEER_MAX))
+      apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
+    else:
+      apply_steer = 0
+
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we
     # received the ASCMLKASteeringCmd loopback confirmation too recently
     last_lka_steer_msg_ms = (now_nanos - CS.loopback_lka_steering_cmd_ts_nanos) * 1e-6
@@ -87,12 +93,6 @@ class CarController:
       # Initialize ASCMLKASteeringCmd counter using the camera until we get a msg on the bus
       if CS.loopback_lka_steering_cmd_ts_nanos == 0:
         self.lka_steering_cmd_counter = CS.pt_lka_steering_cmd_counter + 1
-
-      if CC.latActive:
-        new_steer = int(round(actuators.steer * self.params.STEER_MAX))
-        apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
-      else:
-        apply_steer = 0
 
       self.last_steer_frame = self.frame
       self.apply_steer_last = apply_steer
