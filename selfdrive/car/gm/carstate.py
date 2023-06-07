@@ -2,7 +2,6 @@ import copy
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
-from common.realtime import sec_since_boot
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
