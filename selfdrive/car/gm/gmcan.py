@@ -1,6 +1,10 @@
+import math
+
+from common.conversions import Conversions as CV
 from common.numpy_fast import clip
+from common.realtime import DT_CTRL
 from selfdrive.car import make_can_msg, create_gas_interceptor_command
-from selfdrive.car.gm.values import CAR
+from selfdrive.car.gm.values import CAR, CruiseButtons, CanBus
 
 
 def create_buttons(packer, bus, idx, button):
@@ -214,3 +218,31 @@ def create_gm_pedal_interceptor_command(packer, CS, CC, actuators, idx):
     pedal_gas = 0.0  # May not be needed with the enable param
 
   return create_gas_interceptor_command(packer, pedal_gas, idx)
+
+
+def create_gm_cc_spam_command(packer, controller, CS, actuators):
+  # TODO: Cleanup the timing - normal is every 30ms...
+
+  cruiseBtn = CruiseButtons.INIT
+  # We will spam the up/down buttons till we reach the desired speed
+  # TODO: Apparently there are rounding issues.
+  speedSetPoint = int(round(CS.out.cruiseState.speed * CV.MS_TO_MPH))
+  speedActuator = math.floor(actuators.speed * CV.MS_TO_MPH)
+  speedDiff = (speedActuator - speedSetPoint)
+
+  # We will spam the up/down buttons till we reach the desired speed
+  rate = 0.64
+  if speedDiff < 0:
+    cruiseBtn = CruiseButtons.DECEL_SET
+    rate = 0.2
+  elif speedDiff > 0:
+    cruiseBtn = CruiseButtons.RES_ACCEL
+
+  # Check rlogs closely - our message shouldn't show up on the pt bus for us
+  # Or bus 2, since we're forwarding... but I think it does
+  # TODO: Cleanup the timing - normal is every 30ms...
+  if (cruiseBtn != CruiseButtons.INIT) and ((controller.frame - controller.last_button_frame) * DT_CTRL > rate):
+    controller.last_button_frame = controller.frame
+    return [create_buttons(packer, CanBus.POWERTRAIN, CS.buttons_counter, cruiseBtn)]
+  else:
+    return []
