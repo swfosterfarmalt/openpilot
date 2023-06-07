@@ -29,14 +29,6 @@ class CarState(CarStateBase):
     self.buttons_counter = 0
     self.single_pedal_mode = False
 
-    self.regenPaddlePressed = False
-    # self.autoHold = CP.carFingerprint not in ({CAR.BOLT_EUV, CAR.ACADIA} | CC_ONLY_CAR)
-    self.autoHold = False  # FIXME
-    self.autoHoldActive = False
-    self.autoHoldActivated = False
-    self.lastAutoHoldTime = 0.0
-    self.sessionInitTime = sec_since_boot()
-
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
 
@@ -144,8 +136,6 @@ class CarState(CarStateBase):
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
     if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint in CC_ONLY_CAR:
       ret.cruiseState.speed = (pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"]) * CV.KPH_TO_MS
-
-    ret.autoHoldActivated = self.autoHoldActivated
 
     return ret
 
