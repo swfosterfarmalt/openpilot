@@ -5,7 +5,6 @@ from common.conversions import Conversions as CV
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-import math
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.gm import gmcan
@@ -44,32 +43,6 @@ def actuator_hystereses(final_pedal, pedal_steady):
   final_pedal = pedal_steady
 
   return final_pedal, pedal_steady
-
-
-# def redneck_acc():
-#   # TODO: Cleanup the timing - normal is every 30ms...
-
-#   cruiseBtn = CruiseButtons.INIT
-#   # We will spam the up/down buttons till we reach the desired speed
-#   # TODO: Apparently there are rounding issues.
-#   speedSetPoint = int(round(CS.out.cruiseState.speed * CV.MS_TO_MPH))
-#   speedActuator = math.floor(actuators.speed * CV.MS_TO_MPH)
-#   speedDiff = (speedActuator - speedSetPoint)
-
-#   # We will spam the up/down buttons till we reach the desired speed
-#   rate = 0.64
-#   if speedDiff < 0:
-#     cruiseBtn = CruiseButtons.DECEL_SET
-#     rate = 0.2
-#   elif speedDiff > 0:
-#     cruiseBtn = CruiseButtons.RES_ACCEL
-
-#   # Check rlogs closely - our message shouldn't show up on the pt bus for us
-#   # Or bus 2, since we're forwarding... but I think it does
-#   # TODO: Cleanup the timing - normal is every 30ms...
-#   if (cruiseBtn != CruiseButtons.INIT) and ((self.frame - self.last_button_frame) * DT_CTRL > rate):
-#     self.last_button_frame = self.frame
-#     can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, CS.buttons_counter, cruiseBtn))
 
 
 class CarController:
@@ -174,7 +147,8 @@ class CarController:
 
         at_full_stop = CC.longActive and CS.out.standstill
         if CC.longActive and self.CP.carFingerprint in CC_ONLY_CAR and not CS.CP.enableGasInterceptor:
-          raise NotImplementedError('Redneck ACC needs to be reimplemented')
+          # Using extend instead of append since the message is only sent on speed change
+          can_sends.extend(gmcan.create_gm_cc_spam_command(self.packer_pt, self, CS, actuators))
         elif CS.CP.enableGasInterceptor:
           can_sends.append(gmcan.create_gm_pedal_interceptor_command(self.packer_pt, CS, CC, actuators, idx))
         else:
