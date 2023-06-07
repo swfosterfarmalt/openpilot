@@ -262,8 +262,6 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
 
-    t = sec_since_boot()
-
     if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
       buttonEvents = [create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)]
       # Handle ACCButtons changing buttons mid-press
@@ -288,17 +286,8 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
-    if self.CS.autoHoldActivated:
-      events.add(car.CarEvent.EventName.autoHoldActivated)
-    if ret.vEgo < self.CP.minSteerSpeed and ret.vEgo > 0.05:
+    if 0.05 < ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
-
-    if self.CS.autoHoldActivated:
-      self.CS.lastAutoHoldTime = t
-    if EventName.accFaulted in events.events and \
-        (t - self.CS.sessionInitTime < 10.0 or
-        t - self.CS.lastAutoHoldTime < 1.0):
-      events.events.remove(EventName.accFaulted)
 
     if self.CP.carFingerprint in CC_ONLY_CAR:
       if ret.vEgo < 24. * CV.MPH_TO_MS:
@@ -312,15 +301,4 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def apply(self, c, now_nanos):
-    can_sends =  self.CC.update(c, self.CS, now_nanos)
-    # Release Auto Hold and creep smoothly when regenpaddle pressed
-    if self.CS.regenPaddlePressed and self.CS.autoHold:
-      self.CS.autoHoldActive = False
-
-    if self.CS.autoHold and not self.CS.autoHoldActive and not self.CS.regenPaddlePressed:
-      if self.CS.out.vEgo > 0.03:
-        self.CS.autoHoldActive = True
-      elif self.CS.out.vEgo < 0.02 and self.CS.out.brakePressed:
-        self.CS.autoHoldActive = True
-
-    return can_sends
+    return self.CC.update(c, self.CS, now_nanos)
