@@ -726,7 +726,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
     ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
-  
+
   EventName.calibrationRecalibrating: {
     ET.PERMANENT: calibration_incomplete_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Device Remount Detected: Recalibrating"),
@@ -955,14 +955,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("Vehicle Sensors Calibrating"),
   },
 
-  EventName.autoHoldActivated: {
-    ET.PERMANENT: Alert(
-    "AutoHolding | Gas to resume",
-    "You can rest your foot now.",
-    AlertStatus.normal, AlertSize.small,
-    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0.4, .3),
-  },
-  
   EventName.torqueNNFFLoadSuccess: {
     ET.PERMANENT: Alert(
       "e2e NN torque controller loaded successfully",
@@ -970,7 +962,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 6.0),
   },
-  
+
   EventName.torqueNNFFLoadFailure: {
     ET.PERMANENT: Alert(
       "e2e NN torque controller failed to load!",
@@ -978,7 +970,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 6.0),
   },
-  
+
   EventName.torqueNNFFNotLoaded: {
     ET.PERMANENT: Alert(
       "e2e NN torque controller not loaded",
