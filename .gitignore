@@ -56,7 +56,7 @@ selfdrive/modeld/_dmonitoringmodeld
 /src/
 
 one
-openpilot
+# openpilot
 notebooks
 xx
 yy
