@@ -3,13 +3,13 @@ import math
 from cereal import car
 from common.conversions import Conversions as CV
 from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import clip, interp, clip
+from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 import math
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_driver_steer_torque_limits, create_gas_interceptor_command
+from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, AccState, CruiseButtons, EV_CAR, CC_ONLY_CAR
+from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, EV_CAR, CC_ONLY_CAR
 from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
@@ -70,43 +70,6 @@ def actuator_hystereses(final_pedal, pedal_steady):
 #   if (cruiseBtn != CruiseButtons.INIT) and ((self.frame - self.last_button_frame) * DT_CTRL > rate):
 #     self.last_button_frame = self.frame
 #     can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, CS.buttons_counter, cruiseBtn))
-
-# def pedal_command():
-#   if CS.single_pedal_mode:
-#     # In L Mode, Pedal applies regen at a fixed coast-point (TODO: max regen in L mode may be different per car)
-#     # This will apply to EVs in L mode.
-#     # accel values below zero down to a cutoff point
-#     #  that approximates the percentage of braking regen can handle should be scaled between 0 and the coast-point
-#     # accell values below this point will need to be add-on future hijacked AEB
-#     # TODO: Determine (or guess) at regen percentage
-
-#     # From Felger's Bolt Fort
-#     # It seems in L mode, accel / decel point is around 1/5
-#     # -1-------AEB------0----regen---0.15-------accel----------+1
-#     # Shrink gas request to 0.85, have it start at 0.2
-#     # Shrink brake request to 0.85, first 0.15 gives regen, rest gives AEB
-
-#     zero = 0.15625  # 40/256
-
-#     if actuators.accel > 0.:
-#       # Scales the accel from 0-1 to 0.156-1
-#       pedal_gas = clip(((1 - zero) * actuators.accel + zero), 0., 1.)
-#     else:
-#       # if accel is negative, -0.1 -> 0.015625
-#       pedal_gas = clip(zero + actuators.accel, 0., zero)  # Make brake the same size as gas, but clip to regen
-#       # aeb = actuators.brake*(1-zero)-regen # For use later, braking more than regen
-#   else:
-#     pedal_gas = clip(actuators.accel, 0., 1.)
-
-#   # apply pedal hysteresis and clip the final output to valid values.
-#   pedal_final, self.pedal_steady = actuator_hystereses(pedal_gas, self.pedal_steady)
-#   pedal_gas = clip(pedal_final, 0., 1.)
-
-#   if not CC.longActive:
-#     pedal_gas = 0.0  # May not be needed with the enable param
-
-#   idx = (self.frame // 4) % 4
-#   can_sends.append(create_gas_interceptor_command(self.packer_pt, pedal_gas, idx))
 
 
 class CarController:
@@ -208,7 +171,7 @@ class CarController:
         if CC.longActive and self.CP.carFingerprint in CC_ONLY_CAR and not CS.CP.enableGasInterceptor:
           raise NotImplementedError('Redneck ACC needs to be reimplemented')
         elif CS.CP.enableGasInterceptor:
-          raise NotImplementedError('Gas Interceptor needs to be reimplemented')
+          can_sends.append(gmcan.create_gm_pedal_interceptor_command(self.packer_pt, CS, CC, actuators, idx))
         else:
           # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
