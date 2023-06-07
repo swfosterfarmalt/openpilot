@@ -37,6 +37,69 @@ def actuator_hystereses(final_pedal, pedal_steady):
   return final_pedal, pedal_steady
 
 
+# def redneck_acc():
+#   # TODO: Cleanup the timing - normal is every 30ms...
+
+#   cruiseBtn = CruiseButtons.INIT
+#   # We will spam the up/down buttons till we reach the desired speed
+#   # TODO: Apparently there are rounding issues.
+#   speedSetPoint = int(round(CS.out.cruiseState.speed * CV.MS_TO_MPH))
+#   speedActuator = math.floor(actuators.speed * CV.MS_TO_MPH)
+#   speedDiff = (speedActuator - speedSetPoint)
+
+#   # We will spam the up/down buttons till we reach the desired speed
+#   rate = 0.64
+#   if speedDiff < 0:
+#     cruiseBtn = CruiseButtons.DECEL_SET
+#     rate = 0.2
+#   elif speedDiff > 0:
+#     cruiseBtn = CruiseButtons.RES_ACCEL
+
+#   # Check rlogs closely - our message shouldn't show up on the pt bus for us
+#   # Or bus 2, since we're forwarding... but I think it does
+#   # TODO: Cleanup the timing - normal is every 30ms...
+#   if (cruiseBtn != CruiseButtons.INIT) and ((self.frame - self.last_button_frame) * DT_CTRL > rate):
+#     self.last_button_frame = self.frame
+#     can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, CS.buttons_counter, cruiseBtn))
+
+# def pedal_command():
+#   if CS.single_pedal_mode:
+#     # In L Mode, Pedal applies regen at a fixed coast-point (TODO: max regen in L mode may be different per car)
+#     # This will apply to EVs in L mode.
+#     # accel values below zero down to a cutoff point
+#     #  that approximates the percentage of braking regen can handle should be scaled between 0 and the coast-point
+#     # accell values below this point will need to be add-on future hijacked AEB
+#     # TODO: Determine (or guess) at regen percentage
+
+#     # From Felger's Bolt Fort
+#     # It seems in L mode, accel / decel point is around 1/5
+#     # -1-------AEB------0----regen---0.15-------accel----------+1
+#     # Shrink gas request to 0.85, have it start at 0.2
+#     # Shrink brake request to 0.85, first 0.15 gives regen, rest gives AEB
+
+#     zero = 0.15625  # 40/256
+
+#     if actuators.accel > 0.:
+#       # Scales the accel from 0-1 to 0.156-1
+#       pedal_gas = clip(((1 - zero) * actuators.accel + zero), 0., 1.)
+#     else:
+#       # if accel is negative, -0.1 -> 0.015625
+#       pedal_gas = clip(zero + actuators.accel, 0., zero)  # Make brake the same size as gas, but clip to regen
+#       # aeb = actuators.brake*(1-zero)-regen # For use later, braking more than regen
+#   else:
+#     pedal_gas = clip(actuators.accel, 0., 1.)
+
+#   # apply pedal hysteresis and clip the final output to valid values.
+#   pedal_final, self.pedal_steady = actuator_hystereses(pedal_gas, self.pedal_steady)
+#   pedal_gas = clip(pedal_final, 0., 1.)
+
+#   if not CC.longActive:
+#     pedal_gas = 0.0  # May not be needed with the enable param
+
+#   idx = (self.frame // 4) % 4
+#   can_sends.append(create_gas_interceptor_command(self.packer_pt, pedal_gas, idx))
+
+
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
@@ -111,88 +174,29 @@ class CarController:
           # ASCM sends max regen when not enabled
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
-        elif CC.longActive and self.CP.carFingerprint in CC_ONLY_CAR and not CS.CP.enableGasInterceptor:
-          # BEGIN CC-ACC ######
-          # TODO: Cleanup the timing - normal is every 30ms...
-
-          cruiseBtn = CruiseButtons.INIT
-          # We will spam the up/down buttons till we reach the desired speed
-          # TODO: Apparently there are rounding issues.
-          speedSetPoint = int(round(CS.out.cruiseState.speed * CV.MS_TO_MPH))
-          speedActuator = math.floor(actuators.speed * CV.MS_TO_MPH)
-          speedDiff = (speedActuator - speedSetPoint)
-
-          # We will spam the up/down buttons till we reach the desired speed
-          rate = 0.64
-          if speedDiff < 0:
-            cruiseBtn = CruiseButtons.DECEL_SET
-            rate = 0.2
-          elif speedDiff > 0:
-            cruiseBtn = CruiseButtons.RES_ACCEL
-
-          # Check rlogs closely - our message shouldn't show up on the pt bus for us
-          # Or bus 2, since we're forwarding... but I think it does
-          # TODO: Cleanup the timing - normal is every 30ms...
-          if (cruiseBtn != CruiseButtons.INIT) and ((self.frame - self.last_button_frame) * DT_CTRL > rate):
-            self.last_button_frame = self.frame
-            can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, CS.buttons_counter, cruiseBtn))
-            # END CC-ACC #######
+        else:
           self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
           self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
 
-        # BEGIN INTERCEPTOR ############################
-        if CS.CP.enableGasInterceptor:
-          # TODO: JJS Detect saturated battery?
-          if CS.single_pedal_mode:
-            # In L Mode, Pedal applies regen at a fixed coast-point (TODO: max regen in L mode may be different per car)
-            # This will apply to EVs in L mode.
-            # accel values below zero down to a cutoff point
-            #  that approximates the percentage of braking regen can handle should be scaled between 0 and the coast-point
-            # accell values below this point will need to be add-on future hijacked AEB
-            # TODO: Determine (or guess) at regen percentage
+        idx = (self.frame // 4) % 4
 
-            # From Felger's Bolt Fort
-            # It seems in L mode, accel / decel point is around 1/5
-            # -1-------AEB------0----regen---0.15-------accel----------+1
-            # Shrink gas request to 0.85, have it start at 0.2
-            # Shrink brake request to 0.85, first 0.15 gives regen, rest gives AEB
-
-            zero = 0.15625  # 40/256
-
-            if actuators.accel > 0.:
-              # Scales the accel from 0-1 to 0.156-1
-              pedal_gas = clip(((1 - zero) * actuators.accel + zero), 0., 1.)
-            else:
-              # if accel is negative, -0.1 -> 0.015625
-              pedal_gas = clip(zero + actuators.accel, 0., zero)  # Make brake the same size as gas, but clip to regen
-              # aeb = actuators.brake*(1-zero)-regen # For use later, braking more than regen
-          else:
-            pedal_gas = clip(actuators.accel, 0., 1.)
-
-          # apply pedal hysteresis and clip the final output to valid values.
-          pedal_final, self.pedal_steady = actuator_hystereses(pedal_gas, self.pedal_steady)
-          pedal_gas = clip(pedal_final, 0., 1.)
-
-          if not CC.longActive:
-            pedal_gas = 0.0  # May not be needed with the enable param
-
-          idx = (self.frame // 4) % 4
-          can_sends.append(create_gas_interceptor_command(self.packer_pt, pedal_gas, idx))
-          # END INTERCEPTOR ############################
+        at_full_stop = CC.longActive and CS.out.standstill
+        near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
+        if CC.longActive and self.CP.carFingerprint in CC_ONLY_CAR and not CS.CP.enableGasInterceptor:
+          raise NotImplementedError('Redneck ACC needs to be reimplemented')
+        elif CS.CP.enableGasInterceptor:
+          raise NotImplementedError('Gas Interceptor needs to be reimplemented')
         else:
-          idx = (self.frame // 4) % 4
+          # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
+          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
 
-          at_full_stop = CC.longActive and CS.out.standstill
-          near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
+        if self.CP.carFingerprint not in CC_ONLY_CAR:
           friction_brake_bus = CanBus.CHASSIS
           # GM Camera exceptions
           # TODO: can we always check the longControlState?
           if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint not in CC_ONLY_CAR:
             at_full_stop = at_full_stop and actuators.longControlState == LongCtrlState.stopping
             friction_brake_bus = CanBus.POWERTRAIN
-
-          # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
-          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
           can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
           # Send dashboard UI commands (ACC status)
