@@ -220,16 +220,20 @@ class CarState(CarStateBase):
     if CP.networkLocation == NetworkLocation.fwdCamera:
       signals += [
         ("RollingCounter", "ASCMLKASteeringCmd"),
-        ("SinglePedalModeActive", "EVDriveMode"),
       ]
       checks += [
         ("ASCMLKASteeringCmd", 0),
-        ("EVDriveMode", 0),
       ]
 
     if CP.transmissionType == TransmissionType.direct:
-      signals.append(("RegenPaddle", "EBCMRegenPaddle"))
-      checks.append(("EBCMRegenPaddle", 50))
+      signals += [
+        ("RegenPaddle", "EBCMRegenPaddle"),
+        ("SinglePedalModeActive", "EVDriveMode"),
+      ]
+      checks += [
+        ("EBCMRegenPaddle", 50),
+        ("EVDriveMode", 0),
+      ]
 
     if CP.carFingerprint in CC_ONLY_CAR:
       signals.remove(("BrakePedalPos", "ECMAcceleratorPos"))
