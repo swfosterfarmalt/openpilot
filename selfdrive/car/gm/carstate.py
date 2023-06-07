@@ -30,7 +30,8 @@ class CarState(CarStateBase):
     self.single_pedal_mode = False
 
     self.regenPaddlePressed = False
-    self.autoHold = CP.carFingerprint not in [CAR.BOLT_EUV, CAR.ACADIA] + CC_ONLY_CAR
+    # self.autoHold = CP.carFingerprint not in ({CAR.BOLT_EUV, CAR.ACADIA} | CC_ONLY_CAR)
+    self.autoHold = False  # FIXME
     self.autoHoldActive = False
     self.autoHoldActivated = False
     self.lastAutoHoldTime = 0.0
