@@ -214,30 +214,13 @@ class CarController:
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
 
         if self.CP.carFingerprint not in CC_ONLY_CAR:
-          if CS.out.cruiseState.available and not CC.longActive and CS.autoHold and CS.autoHoldActive and not CS.out.gasPressed and CS.out.gearShifter in [
-            'drive', 'low'] and CS.out.vEgo < 0.02 and not CS.regenPaddlePressed:
-            # Auto Hold State
-            car_stopping = self.apply_gas < self.params.ZERO_GAS
-            friction_brake_bus = CanBus.CHASSIS
-            # GM Camera exceptions
-            # TODO: can we always check the longControlState?
-            if self.CP.networkLocation == NetworkLocation.fwdCamera:
-              friction_brake_bus = CanBus.POWERTRAIN
-            near_stop = (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE) and car_stopping
-            CS.autoHoldActivated = True
-          else:
-            if CS.out.gasPressed:
-              at_full_stop = False
-              near_stop = False
-            else:
-              at_full_stop = CC.longActive and CS.out.standstill
-              near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
-            friction_brake_bus = CanBus.CHASSIS
-            # GM Camera exceptions
-            # TODO: can we always check the longControlState?
-            if self.CP.networkLocation == NetworkLocation.fwdCamera:
-              at_full_stop = at_full_stop and actuators.longControlState == LongCtrlState.stopping
-              friction_brake_bus = CanBus.POWERTRAIN
+          near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
+          friction_brake_bus = CanBus.CHASSIS
+          # GM Camera exceptions
+          # TODO: can we always check the longControlState?
+          if self.CP.networkLocation == NetworkLocation.fwdCamera:
+            at_full_stop = at_full_stop and actuators.longControlState == LongCtrlState.stopping
+            friction_brake_bus = CanBus.POWERTRAIN
           can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
         # Send dashboard UI commands (ACC status)
