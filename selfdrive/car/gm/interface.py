@@ -310,8 +310,13 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.resumeRequired)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
-    if self.CP.enableGasInterceptor and self.CP.transmissionType == TransmissionType.direct and not self.CS.single_pedal_mode:
-      events.add(EventName.brakeUnavailable)
+
+    if self.CP.carFingerprint in CC_ONLY_CAR:
+      if ret.vEgo < 24. * CV.MPH_TO_MS:
+        events.add(EventName.speedTooLow)
+    # FIXME
+    # if self.CP.enableGasInterceptor and self.CP.transmissionType == TransmissionType.direct and not self.CS.single_pedal_mode:
+    #   events.add(EventName.brakeUnavailable)
 
     ret.events = events.to_msg()
 
