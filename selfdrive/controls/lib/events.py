@@ -326,15 +326,6 @@ def wrong_car_mode_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
   return NoEntryAlert(text)
 
 
-def no_braking_alert(alert_type, default_text):
-  def _no_braking_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int):
-    text = default_text
-    if CP.carName == "gm" and CP.enableGasInterceptor:
-      text = "Shift To L To Use Pedal Interceptor"
-    return alert_type(text)
-  return _no_braking_alert
-
-
 def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   axes = sm['testJoystick'].axes
   gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
@@ -989,12 +980,16 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
   
   EventName.torqueNNFFNotLoaded: {
-  ET.PERMANENT: Alert(
-    "e2e NN torque controller not loaded",
-    "car not found",
-    AlertStatus.userPrompt, AlertSize.mid,
-    Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 6.0),
+    ET.PERMANENT: Alert(
+      "e2e NN torque controller not loaded",
+      "car not found",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 6.0),
   },
+
+  EventName.pedalInterceptorNoBrake: {
+    ET.NO_ENTRY: NoEntryAlert("Shift To L To Use Pedal Interceptor"),
+  }
 }
 
 
