@@ -116,10 +116,11 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     steerTimeLimit @115;
     vehicleSensorsInvalid @116;
 
-    autoHoldActivated @118;
     torqueNNFFLoadSuccess @119;
     torqueNNFFLoadFailure @120;
     torqueNNFFNotLoaded @121;
+
+    pedalInterceptorNoBrake @118;
 
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
@@ -171,7 +172,7 @@ struct CarState {
   # gas pedal, 0.0-1.0
   gas @3 :Float32;        # this is user pedal only
   gasPressed @4 :Bool;    # this is user pedal only
-  
+
   engineRpm @46 :Float32;
 
   # brake pedal, 0.0-1.0
@@ -214,8 +215,6 @@ struct CarState {
 
   # clutch (manual transmission only)
   clutchPressed @28 :Bool;
-
-  autoHoldActivated @48 :Bool;
 
   # blindspot sensors
   leftBlindspot @33 :Bool; # Is there something blocking the left lane change
@@ -429,7 +428,7 @@ struct CarParams {
   carName @0 :Text;
   carFingerprint @1 :Text;
   fuzzyFingerprint @55 :Bool;
-  nnffFingerprint @74 :Text;
+  nnffFingerprint @72 :Text;
 
   notCar @66 :Bool;  # flag for non-car robotics platforms
 
