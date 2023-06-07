@@ -82,17 +82,7 @@ class LatControlTorque(LatControl):
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
 
-  def update_live_tune(self):
-    if not self.custom_torque:
-      return
-    self._frame += 1
-    if self._frame % 300 == 0:
-      self.torque_params.latAccelFactor = float(self.param_s.get("TorqueMaxLatAccel", encoding="utf8")) * 0.01
-      self.torque_params.friction = float(self.param_s.get("TorqueFriction", encoding="utf8")) * 0.01
-      self._frame = 0
-
   def update(self, active, CS, VM, params, last_actuators, steer_limited, desired_curvature, desired_curvature_rate, llk, lat_plan=None, model_data=None):
-    self.update_live_tune()
     pid_log = log.ControlsState.LateralTorqueState.new_message()
 
     if not active:
