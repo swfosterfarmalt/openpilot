@@ -119,7 +119,9 @@ class CarController:
       if self.frame % 4 == 0:
         # Pitch compensated acceleration;
         # TODO: include future pitch (sm['modelDataV2'].orientation.y) to account for long actuator delay
-        pitch = clip(CC.orientationNED[1], self.pitch.x - PITCH_MAX_DELTA, self.pitch.x + PITCH_MAX_DELTA)
+        try: pitch = CC.orientationNED[1]  # FIXME
+        except IndexError: pitch = 0.
+        pitch = clip(pitch, self.pitch.x - PITCH_MAX_DELTA, self.pitch.x + PITCH_MAX_DELTA)
         pitch = clip(pitch, PITCH_MIN, PITCH_MAX)
         self.pitch.update(pitch)
         accel_g = ACCELERATION_DUE_TO_GRAVITY * apply_deadzone(self.pitch.x, PITCH_DEADZONE) # driving uphill is positive pitch
