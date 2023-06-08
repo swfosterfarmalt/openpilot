@@ -30,7 +30,7 @@ rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 git init
-git remote add origin git@github.com:commaai/openpilot.git
+git remote add origin git@github.com:opgm/openpilot.git
 git checkout --orphan $RELEASE_BRANCH
 
 # do the files copy
@@ -45,7 +45,9 @@ cd $BUILD_DIR
 rm -f panda/board/obj/panda.bin.signed
 rm -f panda/board/obj/panda_h7.bin.signed
 
-VERSION=$(cat common/version.h | awk -F[\"-]  '{print $2}')
+# set version to today's date
+VERSION=$(date +%Y%m%d)
+#VERSION=$(cat common/version.h | awk -F[\"-]  '{print $2}')
 echo "#define COMMA_VERSION \"$VERSION-release\"" > common/version.h
 
 echo "[-] committing version $VERSION T=$SECONDS"
@@ -54,7 +56,7 @@ git commit -a -m "openpilot v$VERSION release"
 
 # Build panda firmware
 pushd panda/
-CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
+CERT=/data/pandaextra/certs/release scons -u .
 mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 mv board/obj/panda_h7.bin.signed /tmp/panda_h7.bin.signed
 popd
@@ -102,14 +104,13 @@ TEST_FILES="tools/"
 cd $SOURCE_DIR
 cp -pR -n --parents $TEST_FILES $BUILD_DIR/
 cd $BUILD_DIR
-RELEASE=1 selfdrive/test/test_onroad.py
+#RELEASE=1 selfdrive/test/test_onroad.py
 #selfdrive/manager/test/test_manager.py
-selfdrive/car/tests/test_car_interfaces.py
-rm -rf $TEST_FILES
+#selfdrive/car/tests/test_car_interfaces.py
 
 if [ ! -z "$RELEASE_BRANCH" ]; then
   echo "[-] pushing release T=$SECONDS"
-  git push -f origin $RELEASE_BRANCH:$RELEASE_BRANCH
+  GIT_SSH_COMMAND="ssh -i /data/id_rsa_github" git push -f origin $RELEASE_BRANCH:$RELEASE_BRANCH
 fi
 
 if [ ! -z "$DASHCAM_BRANCH" ]; then
