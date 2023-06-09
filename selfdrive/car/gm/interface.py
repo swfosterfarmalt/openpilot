@@ -289,7 +289,7 @@ class CarInterface(CarInterfaceBase):
     if 0.05 < ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
 
-    if self.CP.carFingerprint in CC_ONLY_CAR:
+    if self.CP.carFingerprint in CC_ONLY_CAR and not self.CP.enableGasInterceptor:
       if ret.vEgo < 24. * CV.MPH_TO_MS:
         events.add(EventName.speedTooLow)
 
