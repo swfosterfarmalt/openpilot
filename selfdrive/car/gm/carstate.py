@@ -1,4 +1,6 @@
 import copy
+import math
+
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
@@ -26,7 +28,9 @@ class CarState(CarStateBase):
     self.pt_lka_steering_cmd_counter = 0
     self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
+
     self.single_pedal_mode = False
+    self.pedal_steady = 0.
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -265,3 +269,19 @@ class CarState(CarStateBase):
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK, enforce_checks=False)
+
+  @staticmethod
+  def actuator_hystereses(final_pedal, pedal_steady):
+    # hyst params... TODO: move these to VehicleParams
+    pedal_hyst_gap = 0.01  # don't change pedal command for small oscillations within this value
+
+    # for small pedal oscillations within pedal_hyst_gap, don't change the pedal command
+    if math.isclose(final_pedal, 0.0):
+      pedal_steady = 0.
+    elif final_pedal > pedal_steady + pedal_hyst_gap:
+      pedal_steady = final_pedal - pedal_hyst_gap
+    elif final_pedal < pedal_steady - pedal_hyst_gap:
+      pedal_steady = final_pedal + pedal_hyst_gap
+    final_pedal = pedal_steady
+
+    return final_pedal, pedal_steady
