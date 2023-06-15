@@ -25,6 +25,7 @@ class CarState(CarStateBase):
     self.pt_lka_steering_cmd_counter = 0
     self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
+    self.single_pedal_mode = False
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -72,6 +73,7 @@ class CarState(CarStateBase):
     # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
+      self.single_pedal_mode = pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
@@ -201,8 +203,14 @@ class CarState(CarStateBase):
       ]
 
     if CP.transmissionType == TransmissionType.direct:
-      signals.append(("RegenPaddle", "EBCMRegenPaddle"))
-      checks.append(("EBCMRegenPaddle", 50))
+      signals += [
+        ("RegenPaddle", "EBCMRegenPaddle"),
+        ("SinglePedalModeActive", "EVDriveMode"),
+      ]
+      checks += [
+        ("EBCMRegenPaddle", 50),
+        ("EVDriveMode", 0),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.POWERTRAIN)
 
