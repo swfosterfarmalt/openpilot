@@ -1,9 +1,9 @@
 from cereal import car
 from common.conversions import Conversions as CV
-from common.numpy_fast import interp
+from common.numpy_fast import interp, clip
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_driver_steer_torque_limits
+from selfdrive.car import apply_driver_steer_torque_limits, create_gas_interceptor_command
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 
@@ -104,8 +104,22 @@ class CarController:
           at_full_stop = at_full_stop and actuators.longControlState == LongCtrlState.stopping
           friction_brake_bus = CanBus.POWERTRAIN
 
-        # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
+        if self.CP.enableGasInterceptor:
+          if not CC.longActive:
+            interceptor_gas_cmd = 0.
+          elif CS.single_pedal_mode:
+            zero = self.params.SINGLE_PEDAL_ZERO
+            if actuators.accel > 0.:
+              interceptor_gas_cmd = clip(((1 - zero) * actuators.accel + zero), 0., 1.)
+            else:
+              interceptor_gas_cmd = clip(zero + actuators.accel, 0., zero)
+              # TODO: Calculate deceleration when pedal is zero
+          else:
+            interceptor_gas_cmd = clip(actuators.accel, 0., 1.)
+          can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd, self.frame // 2))
+        else:
+          # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
+          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
         # Send dashboard UI commands (ACC status)

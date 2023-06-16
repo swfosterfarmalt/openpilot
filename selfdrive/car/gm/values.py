@@ -32,6 +32,8 @@ class CarControllerParams:
   ACCEL_MAX = 2.  # m/s^2
   ACCEL_MIN = -4.  # m/s^2
 
+  SINGLE_PEDAL_ZERO = 0.15625  # 40/256, coast point for single pedal driving
+
   def __init__(self, CP):
     # Gas/brake lookups
     self.ZERO_GAS = 2048  # Coasting
