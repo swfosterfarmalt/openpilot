@@ -275,10 +275,8 @@ static const addr_checks* gm_init(uint16_t param) {
   } else {
   }
 
-#ifdef ALLOW_DEBUG
   gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
   gm_cc_long = GET_FLAG(param, GM_PARAM_CC_LONG);
-#endif
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long && !gm_cc_long;
   return &gm_rx_checks;
 }
