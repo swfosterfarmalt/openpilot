@@ -68,13 +68,18 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0.]
 
     if candidate in CAMERA_ACC_CAR:
-      ret.experimentalLongitudinalAvailable = candidate not in CC_ONLY_CAR
+      ret.experimentalLongitudinalAvailable = not ret.enableGasInterceptor
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarUnavailable = True  # no radar
-      ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
-      ret.minEnableSpeed = 5 * CV.KPH_TO_MS
-      ret.minSteerSpeed = 10 * CV.KPH_TO_MS
+      if candidate in CC_ONLY_CAR:
+        ret.pcmCruise = False
+        ret.minEnableSpeed = 24 * CV.MPH_TO_MS
+        ret.minSteerSpeed = 7 * CV.MPH_TO_MS
+      else:
+        ret.pcmCruise = True
+        ret.minEnableSpeed = 5 * CV.KPH_TO_MS
+        ret.minSteerSpeed = 10 * CV.KPH_TO_MS
 
       # Tuning for experimental long
       ret.longitudinalTuning.kpV = [2.0, 1.5]
@@ -87,14 +92,10 @@ class CarInterface(CarInterfaceBase):
       if experimental_long:
         ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
-        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
-
-      if candidate in CC_ONLY_CAR and not ret.enableGasInterceptor:
-        # TODO: Add Toggle
-        # TODO: panda flag?
-        ret.minEnableSpeed = -1
-        ret.openpilotLongitudinalControl = True
-        ret.pcmCruise = False
+        if candidate in CC_ONLY_CAR:
+          ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CC_LONG
+        else:
+          ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
 
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
