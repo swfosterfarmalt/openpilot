@@ -321,6 +321,8 @@ def wrong_car_mode_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
   text = "Enable Adaptive Cruise to Engage"
   if CP.carName == "honda":
     text = "Enable Main Switch to Engage"
+  elif CP.carName == "gm" and CP.enableGasInterceptor:
+    text = "Turn CC Off To Use Pedal Interceptor"
   return NoEntryAlert(text)
 
 
@@ -724,7 +726,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
     ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
-  
+
   EventName.calibrationRecalibrating: {
     ET.PERMANENT: calibration_incomplete_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Device Remount Detected: Recalibrating"),
@@ -953,4 +955,31 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("Vehicle Sensors Calibrating"),
   },
 
+  EventName.torqueNNFFLoadSuccess: {
+    ET.PERMANENT: Alert(
+      "e2e NN torque controller loaded successfully",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 6.0),
+  },
+
+  EventName.torqueNNFFLoadFailure: {
+    ET.PERMANENT: Alert(
+      "e2e NN torque controller failed to load!",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 6.0),
+  },
+
+  EventName.torqueNNFFNotLoaded: {
+    ET.PERMANENT: Alert(
+      "e2e NN torque controller not loaded",
+      "car not found",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 6.0),
+  },
+
+  EventName.pedalInterceptorNoBrake: {
+    ET.NO_ENTRY: NoEntryAlert("Shift To L To Use Pedal Interceptor"),
+  }
 }
