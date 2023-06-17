@@ -56,6 +56,7 @@ addr_checks gm_rx_checks = {gm_addr_checks, GM_RX_CHECK_LEN};
 
 const uint16_t GM_PARAM_HW_CAM = 1;
 const uint16_t GM_PARAM_HW_CAM_LONG = 2;
+const uint16_t GM_PARAM_CC_LONG = 4;
 
 enum {
   GM_BTN_UNPRESS = 1,
@@ -67,6 +68,7 @@ enum {
 enum {GM_ASCM, GM_CAM} gm_hw = GM_ASCM;
 bool gm_cam_long = false;
 bool gm_pcm_cruise = false;
+bool gm_cc_long = false;
 
 static int gm_rx_hook(CANPacket_t *to_push) {
 
@@ -90,7 +92,7 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     }
 
     // ACC steering wheel buttons (GM_CAM is tied to the PCM)
-    if ((addr == 481) && (gm_hw == GM_CAM)) {
+    if ((addr == 481) && !gm_pcm_cruise) {
       int button = (GET_BYTE(to_push, 5) & 0x70U) >> 4;
 
       // enter controls on falling edge of set or rising edge of resume (avoids fault)
@@ -146,7 +148,7 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     bool stock_ecu_detected = (addr == 384);  // ASCMLKASteeringCmd
 
     // Check ASCMGasRegenCmd only if we're blocking it
-    if (!gm_pcm_cruise && (addr == 715)) {
+    if ((addr == 715) && !gm_pcm_cruise && !gm_cc_long) {
       stock_ecu_detected = true;
     }
     generic_rx_checks(stock_ecu_detected);
@@ -217,12 +219,14 @@ static int gm_tx_hook(CANPacket_t *to_send) {
   }
 
   // BUTTONS: used for resume spamming and cruise cancellation with stock longitudinal
-  if ((addr == 481) && (gm_pcm_cruise || gm_hw == GM_CAM)) {
+  if ((addr == 481) && (gm_pcm_cruise || gm_cc_long)) {
     int button = (GET_BYTE(to_send, 5) >> 4) & 0x7U;
 
     bool allowed_btn = (button == GM_BTN_CANCEL) && cruise_engaged_prev;
     // For standard CC, allow spamming of SET / RESUME
-    allowed_btn |= cruise_engaged_prev && (gm_hw == GM_CAM) && (button == GM_BTN_SET || button == GM_BTN_RESUME || button == GM_BTN_UNPRESS);
+    if (gm_cc_long) {
+      allowed_btn |= cruise_engaged_prev && (gm_hw == GM_CAM) && (button == GM_BTN_SET || button == GM_BTN_RESUME || button == GM_BTN_UNPRESS);
+    }
     // TODO: With a Pedal, CC needs to be canceled
 
     if (!allowed_btn) {
@@ -273,8 +277,9 @@ static const addr_checks* gm_init(uint16_t param) {
 
 #ifdef ALLOW_DEBUG
   gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
+  gm_cc_long = GET_FLAG(param, GM_PARAM_CC_LONG);
 #endif
-  gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
+  gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long && !gm_cc_long;
   return &gm_rx_checks;
 }
 
