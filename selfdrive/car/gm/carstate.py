@@ -9,6 +9,7 @@ from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
+GearShifter = car.CarState.GearShifter
 STANDSTILL_THRESHOLD = 10 * 0.0311 * CV.KPH_TO_MS
 
 
@@ -70,10 +71,10 @@ class CarState(CarStateBase):
       # https://static.nhtsa.gov/odi/tsbs/2017/MC-10137629-9999.pdf
       ret.brakePressed = ret.brake >= 8
 
-    # Regen braking is braking
     if self.CP.transmissionType == TransmissionType.direct:
+      # Regen braking is braking
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
-      self.single_pedal_mode = pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1
+      self.single_pedal_mode = (pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1) or (ret.gearShifter == GearShifter.low)
 
     ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
     ret.gasPressed = ret.gas > 1e-5
