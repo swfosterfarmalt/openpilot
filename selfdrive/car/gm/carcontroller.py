@@ -90,8 +90,9 @@ class CarController:
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         else:
-          self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-          self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
+          gas_fn, brake_fn = self.params.get_accel_lookup_functions(CS)
+          self.apply_gas = int(round(gas_fn(actuators.accel, CS.out.vEgo)))
+          self.apply_brake = int(round(brake_fn(actuators.accel, CS.out.vEgo)))
 
         idx = (self.frame // 4) % 4
 

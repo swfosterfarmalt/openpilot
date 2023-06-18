@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
+from common.numpy_fast import interp
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 Ecu = car.CarParams.Ecu
@@ -35,6 +36,7 @@ class CarControllerParams:
   SINGLE_PEDAL_ZERO = 0.15625  # 40/256, coast point for single pedal driving
 
   def __init__(self, CP):
+    self.fingerprint = CP.carFingerprint
     # Gas/brake lookups
     self.ZERO_GAS = 2048  # Coasting
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
@@ -60,6 +62,48 @@ class CarControllerParams:
 
     self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, max_regen_acceleration]
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
+
+  @staticmethod
+  def get_max_regen_acceleration_bolt_one_pedal(v_ego):
+    # Bolt EV/EUV regen measured by decelerating from various speeds to a stop in one-pedal mode.
+    # Deceleration appears to max out around ~5mph, at which point is decreases linearly until 0mph.
+    return interp(v_ego, [25., 2.25, 0.],  # m/s
+                         [-1.6, -2.1, -0.2])  # m/s^2
+
+  def gas_lookup_bolt_one_pedal(self, accel, v_ego):
+    """Lookup function for Bolt EUV with gas interceptor, in single pedal mode."""
+    max_regen_acceleration = self.get_max_regen_acceleration_bolt_one_pedal(v_ego)
+    bp = [max_regen_acceleration, 0., self.ACCEL_MAX]
+    v = [0., self.SINGLE_PEDAL_ZERO, 1.]
+    return interp(accel, bp, v)
+
+  def brake_lookup_bolt_one_pedal(self, accel, v_ego):
+    """Lookup function for Bolt EUV with gas interceptor, in single pedal mode."""
+    max_regen_acceleration = self.get_max_regen_acceleration_bolt_one_pedal(v_ego)
+    bp = [self.ACCEL_MIN, max_regen_acceleration]
+    v = [self.MAX_BRAKE, 0.]
+    return interp(accel, bp, v)
+
+  def gas_lookup_bolt_interceptor(self, accel, v_ego):
+    """Lookup function for Bolt EUV with gas interceptor, not in single pedal mode."""
+    bp = [-1., self.ACCEL_MAX]
+    v = [0., 1.]
+    return interp(accel, bp, v)
+
+  def gas_lookup(self, accel, v_ego):
+    return interp(accel, self.GAS_LOOKUP_BP, self.GAS_LOOKUP_V)
+
+  def brake_lookup(self, accel, v_ego):
+    return interp(accel, self.BRAKE_LOOKUP_BP, self.BRAKE_LOOKUP_V)
+
+  def get_accel_lookup_functions(self, CS):
+    if self.fingerprint == CAR.BOLT_EUV and CS.enableGasInterceptor:
+      if CS.single_pedal_mode:
+        return self.gas_lookup_bolt_one_pedal, self.brake_lookup_bolt_one_pedal
+      else:
+        return self.gas_lookup_bolt_interceptor, self.brake_lookup
+    else:
+      return self.gas_lookup, self.brake_lookup
 
 
 class CAR:
