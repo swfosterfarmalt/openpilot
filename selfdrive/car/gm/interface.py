@@ -235,6 +235,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    elif candidate in (CAR.SUBURBAN, CAR.SUBURBAN_CC):
+      ret.mass = 2731. + STD_CARGO_KG
+      ret.wheelbase = 3.302
+      ret.steerRatio = 17.3 # COPIED FROM SILVERADO
+      ret.centerToFront = ret.wheelbase * 0.49
+      ret.steerActuatorDelay = 0.075
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     if ret.enableGasInterceptor:
       ret.minEnableSpeed = -1
       ret.pcmCruise = False
