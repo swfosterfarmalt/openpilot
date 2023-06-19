@@ -245,6 +245,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.075
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    if candidate in CC_ONLY_CAR:
+      ret.minEnableSpeed = 25 * CV.MPH_TO_MS
+      ret.stoppingControl = False
+
     if ret.enableGasInterceptor:
       ret.minEnableSpeed = -1
       ret.pcmCruise = False
