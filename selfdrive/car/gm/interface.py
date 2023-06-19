@@ -98,12 +98,19 @@ class CarInterface(CarInterfaceBase):
           ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
 
     else:  # ASCM, OBD-II harness
-      ret.openpilotLongitudinalControl = True
+      if candidate in CC_ONLY_CAR:
+        ret.experimentalLongitudinalAvailable = True
+        ret.minEnableSpeed = 24 * CV.MPH_TO_MS
+        if experimental_long:
+          ret.openpilotLongitudinalControl = True
+          ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CC_LONG
+      else:
+        ret.openpilotLongitudinalControl = True
+        ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.networkLocation = NetworkLocation.gateway
       ret.radarUnavailable = RADAR_HEADER_MSG not in fingerprint[CanBus.OBSTACLE] and not docs
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
       # supports stop and go, but initial engage must (conservatively) be above 18mph
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.minSteerSpeed = 7 * CV.MPH_TO_MS
       ret.stoppingDecelRate = 0.02
 
