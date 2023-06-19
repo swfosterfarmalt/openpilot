@@ -232,6 +232,11 @@ class CarState(CarStateBase):
       checks += [
         ("ASCMLKASteeringCmd", 0),
       ]
+      if CP.carFingerprint in CC_ONLY_CAR:
+        signals.remove(("BrakePedalPos", "ECMAcceleratorPos"))
+        signals.append(("BrakePedalPosition", "EBCMBrakePedalPosition"))
+        checks.remove(("ECMAcceleratorPos", 80))
+        checks.append(("EBCMBrakePedalPosition", 100))
 
     if CP.transmissionType == TransmissionType.direct:
       signals += [
@@ -244,10 +249,6 @@ class CarState(CarStateBase):
       ]
 
     if CP.carFingerprint in CC_ONLY_CAR:
-      signals.remove(("BrakePedalPos", "ECMAcceleratorPos"))
-      signals.append(("BrakePedalPosition", "EBCMBrakePedalPosition"))
-      checks.remove(("ECMAcceleratorPos", 80))
-      checks.append(("EBCMBrakePedalPosition", 100))
       signals.append(("CruiseSetSpeed", "ECMCruiseControl"))
       checks.append(("ECMCruiseControl", 10))
 
