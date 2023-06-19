@@ -247,6 +247,21 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    if ret.enableGasInterceptor:
+      ret.minEnableSpeed = -1
+      ret.pcmCruise = False
+      ret.openpilotLongitudinalControl = True
+      # Note: Low speed, stop and go not tested. Should be fairly smooth on highway
+      ret.longitudinalTuning.kpV = [0.35, 0.5]
+      ret.longitudinalTuning.kiBP = [0., 35.0]
+      ret.longitudinalTuning.kiV = [0.1, 0.1]
+      ret.longitudinalTuning.kf = 0.15
+      ret.stoppingDecelRate = 0.8  # reach stopping target smoothly, brake_travel/s while trying to stop
+      ret.vEgoStopping = 0.5  # Speed at which the car goes into stopping state, when car starts requesting stopping accel
+      ret.vEgoStarting = 0.5  # Speed at which the car goes into starting state, when car starts requesting starting accel
+      # vEgoStarting needs to be > or == vEgoStopping to avoid state transition oscillation
+      ret.stoppingControl = True
+
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
