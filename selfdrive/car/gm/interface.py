@@ -245,6 +245,16 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.075
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    elif candidate == CAR.YUKON_CC:
+      ret.minSteerSpeed = -1 * CV.MPH_TO_MS
+      ret.mass = 5602. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
+      ret.wheelbase = 2.95  # 116 inches in meters
+      ret.steerRatio = 16.3  # guess for tourx
+      ret.steerRatioRear = 0.  # unknown online
+      ret.centerToFront = 2.59  # ret.wheelbase * 0.4 # wild guess
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     if candidate in CC_ONLY_CAR:
       ret.minEnableSpeed = 25 * CV.MPH_TO_MS
       ret.stoppingControl = False
