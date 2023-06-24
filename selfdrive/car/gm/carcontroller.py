@@ -106,7 +106,7 @@ class CarController:
           friction_brake_bus = CanBus.POWERTRAIN
 
         if self.CP.enableGasInterceptor and self.CP.carFingerprint == CAR.BOLT_EUV:
-          can_sends.append(create_gas_interceptor_command(self.packer_pt, clip(self.apply_gas, 0., 255.) // 255, self.frame // 2))
+          can_sends.append(create_gas_interceptor_command(self.packer_pt, clip(self.apply_gas, 0., 255.) / 255., self.frame // 2))
         else:
           # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
