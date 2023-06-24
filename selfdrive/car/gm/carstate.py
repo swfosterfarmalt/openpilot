@@ -81,7 +81,7 @@ class CarState(CarStateBase):
       ret.gasPressed = ret.gas > 1e-5
     else:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2
-      ret.gasPressed = ret.gas > 506
+      ret.gasPressed = ret.gas > 15
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]
@@ -225,7 +225,7 @@ class CarState(CarStateBase):
         ("INTERCEPTOR_GAS2", "GAS_SENSOR"),
       ]
       checks += [
-        ("GAS_SENSOR", 10)
+        ("GAS_SENSOR", 50)
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.POWERTRAIN)
