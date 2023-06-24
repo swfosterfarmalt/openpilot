@@ -76,8 +76,12 @@ class CarState(CarStateBase):
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
       self.single_pedal_mode = (pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1) or (ret.gearShifter == GearShifter.low)
 
-    ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
-    ret.gasPressed = ret.gas > 1e-5
+    if self.CP.enableGasInterceptor:
+      ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
+      ret.gasPressed = ret.gas > 1e-5
+    else:
+      ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2
+      ret.gasPressed = ret.gas > 506
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]
@@ -213,6 +217,15 @@ class CarState(CarStateBase):
       checks += [
         ("EBCMRegenPaddle", 50),
         ("EVDriveMode", 0),
+      ]
+
+    if CP.enableGasInterceptor:
+      signals += [
+        ("INTERCEPTOR_GAS", "GAS_SENSOR"),
+        ("INTERCEPTOR_GAS2", "GAS_SENSOR"),
+      ]
+      checks += [
+        ("GAS_SENSOR", 10)
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.POWERTRAIN)
