@@ -73,6 +73,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
+    ret.enableGasInterceptor = 0x201 in fingerprint[0]
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
