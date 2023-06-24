@@ -33,7 +33,7 @@ class CarControllerParams:
   ACCEL_MAX = 2.  # m/s^2
   ACCEL_MIN = -4.  # m/s^2
 
-  SINGLE_PEDAL_ZERO = 0.15625  # 40/256, coast point for single pedal driving
+  SINGLE_PEDAL_ZERO = 40  # coast point for single pedal driving
 
   def __init__(self, CP):
     self.fingerprint = CP.carFingerprint
@@ -74,7 +74,7 @@ class CarControllerParams:
     """Lookup function for Bolt EUV with gas interceptor, in single pedal mode."""
     max_regen_acceleration = self.get_max_regen_acceleration_bolt_one_pedal(v_ego)
     bp = [max_regen_acceleration, 0., self.ACCEL_MAX]
-    v = [0., self.SINGLE_PEDAL_ZERO, 1.]
+    v = [0., self.SINGLE_PEDAL_ZERO, 255.]
     return interp(accel, bp, v)
 
   def brake_lookup_bolt_one_pedal(self, accel, v_ego):
@@ -87,7 +87,7 @@ class CarControllerParams:
   def gas_lookup_bolt_interceptor(self, accel, v_ego):
     """Lookup function for Bolt EUV with gas interceptor, not in single pedal mode."""
     bp = [-1., self.ACCEL_MAX]
-    v = [0., 1.]
+    v = [0., 255.]
     return interp(accel, bp, v)
 
   def gas_lookup(self, accel, v_ego):
