@@ -89,10 +89,12 @@ class CarController:
           # ASCM sends max regen when not enabled
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
+          interceptor_gas_cmd = 0
         else:
           gas_fn, brake_fn = self.params.get_accel_lookup_functions(CS)
           self.apply_gas = int(round(gas_fn(actuators.accel, CS.out.vEgo)))
           self.apply_brake = int(round(brake_fn(actuators.accel, CS.out.vEgo)))
+          interceptor_gas_cmd = self.apply_gas
 
         idx = (self.frame // 4) % 4
 
@@ -106,11 +108,11 @@ class CarController:
           friction_brake_bus = CanBus.POWERTRAIN
 
         if self.CP.enableGasInterceptor and self.CP.carFingerprint == CAR.BOLT_EUV:
-          can_sends.append(create_gas_interceptor_command(self.packer_pt, clip(self.apply_gas, 0., 255.) / 255., self.frame // 2))
+          can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd / 255., self.frame // 2))
         else:
           # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
-        can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
+        # can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
         # Send dashboard UI commands (ACC status)
         send_fcw = hud_alert == VisualAlert.fcw
