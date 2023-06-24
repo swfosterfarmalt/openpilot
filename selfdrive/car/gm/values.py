@@ -97,7 +97,7 @@ class CarControllerParams:
     return interp(accel, self.BRAKE_LOOKUP_BP, self.BRAKE_LOOKUP_V)
 
   def get_accel_lookup_functions(self, CS):
-    if self.fingerprint == CAR.BOLT_EUV and CS.enableGasInterceptor:
+    if self.fingerprint == CAR.BOLT_EUV and CS.CP.enableGasInterceptor:
       if CS.single_pedal_mode:
         return self.gas_lookup_bolt_one_pedal, self.brake_lookup_bolt_one_pedal
       else:
