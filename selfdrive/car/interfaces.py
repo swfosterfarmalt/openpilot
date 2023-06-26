@@ -58,11 +58,11 @@ class FluxModel:
       for k, v in self.activation_function_names.items():
         activation = activation.replace(k, v)
       self.layers.append((W, b, activation))
-    
+
     self.test(test_dict)
     if not self.test_passed:
       raise ValueError(f"NN FF model failed test: {params_file}")
-    
+
   # Begin activation functions.
   # These are called by name using the keys in the model json file
   def sigmoid(self, x):
@@ -84,12 +84,12 @@ class FluxModel:
     if len(input_array) != self.input_size:
       # This can be used to discern between different "versions" of the NNFF model
       # v1 has an input of 4 (v_ego, lateral_accel, lateral_jerk, roll)
-      # v2 has an input of 20 (v_ego, a_ego, lateral_accel, lateral_jerk, roll, <then three groups of five points with lat accel, lat jerk, and roll data for at one past point -0.3s, and four future points 0.3, 0.6, 1.1, 2.0s, where the 0.3s values are actually the "desired" values when calling the model>) 
+      # v2 has an input of 20 (v_ego, a_ego, lateral_accel, lateral_jerk, roll, <then three groups of five points with lat accel, lat jerk, and roll data for at one past point -0.3s, and four future points 0.3, 0.6, 1.1, 2.0s, where the 0.3s values are actually the "desired" values when calling the model>)
       if self.input_size == 4: # leave out a_ego and anything after the first 5 values
         input_array = [input_array[0], input_array[1], input_array[2], -input_array[3]]
       else:
         raise ValueError(f"Input array length {len(input_array)} does not match the expected length {self.input_size}")
-        
+
     input_array = np.array(input_array, dtype=np.float32)#.reshape(1, -1)
 
     # Rescale the input array using the input_mean and input_std
@@ -98,7 +98,7 @@ class FluxModel:
     output_array = self.forward(input_array)
 
     return float(output_array[0, 0])
-  
+
   def test(self, test_data: dict) -> str:
     num_passed = 0
     num_failed = 0
@@ -121,7 +121,7 @@ class FluxModel:
     summary_str = (
       f"Test results: PASSED ({num_passed} inputs tested) "
     )
-    
+
     self.test_passed = num_failed == 0
     self.test_str = summary_str
 
@@ -139,7 +139,7 @@ class FluxModel:
       summary_lines.append(
           f"  Layer {i + 1}: W: {W.shape}, b: {b.shape}, f: {activation}"
       )
-    
+
     summary_str = "\n".join(summary_lines)
 
     if do_print:
@@ -201,20 +201,20 @@ class CarInterfaceBase(ABC):
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
-  
+
   def get_ff_nn(self, x):
     return self.ff_nn_model.evaluate(x)
-  
+
   def get_nn_ff_model_path(self, car):
     return f"/data/openpilot/selfdrive/car/torque_data/lat_models/{car}.json"
-  
+
   def has_nn_ff(self, car):
     model_path = self.get_nn_ff_model_path(car)
     if os.path.isfile(model_path):
       return True
     else:
       return False
-  
+
   def initialize_ff_nn(self, car):
     cloudlog.warning(f"Checking for lateral torque NN FF model for {car}...")
     if self.has_nn_ff(car):
@@ -470,6 +470,10 @@ class CarStateBase(ABC):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
     self.out = car.CarState.new_message()
+
+    # PFEIFER - AOL {{
+    self.lateral_allowed = False
+    # }} PFEIFER - AOL
 
     self.cruise_buttons = 0
     self.left_blinker_cnt = 0

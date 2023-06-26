@@ -9,6 +9,10 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, CAR, CC_ONLY_CAR
 
+# PFEIFER - AOL {{
+from selfdrive.controls.always_on_lateral import AlwaysOnLateral, AlwaysOnLateralType
+# }} PFEIFER - AOL
+
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
 GearShifter = car.CarState.GearShifter
@@ -31,6 +35,10 @@ class CarState(CarStateBase):
 
     self.single_pedal_mode = False
     self.pedal_steady = 0.
+
+    # PFEIFER - AOL {{
+    AlwaysOnLateral.set_always_on_lateral_type(AlwaysOnLateralType.CRUISE_STATE)
+    # }} PFEIFER - AOL
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()

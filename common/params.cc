@@ -203,6 +203,15 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
     {"Version", PERSISTENT},
     {"VisionRadarToggle", PERSISTENT},
+
+    // PFEIFER - AOL {{
+    {"AlwaysOnLateralEnabled", PERSISTENT},
+    {"AlwaysOnLateralType", PERSISTENT},
+    {"LateralAllowed", PERSISTENT},
+    {"LateralActive", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
+    {"DisengageLatOnBrake", PERSISTENT},
+    {"DisengageLatOnBlinker", PERSISTENT},
+    // }} PFEIFER - AOL
 };
 
 } // namespace
