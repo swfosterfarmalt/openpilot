@@ -130,6 +130,9 @@ private:
   QWidget *map = nullptr;
   QHBoxLayout* split;
   bool navDisabled = false;
+  // PFEIFER - AOL {{
+  Params params;
+  // }} PFEIFER - AOL
 
 private slots:
   void offroadTransition(bool offroad);
