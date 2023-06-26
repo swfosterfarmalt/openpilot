@@ -54,3 +54,14 @@ For the latest stable build, use the install URL: `installer.comma.ai/opgm/build
 
 ## Discussion
 Come join us on the OPGM channel in the [openpilot community discord](https://discord.gg/KGWEdwSnCU)!
+
+### Contributing
+Feel free to open a pull request against the `dev` branch.
+
+### Credits
+* [comma.ai](https://comma.ai) for openpilot
+* jshuler
+* nworby
+* twilsonco
+* k1mu
+* kliu
