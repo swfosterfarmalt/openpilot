@@ -29,8 +29,20 @@ include:
 * Chevrolet Tahoe/GMC Yukon w/o ACC
 * Chevrolet Suburban w/o ACC
 
-If your vehicle is not on this list, there is a very good chance that already is or can be supported! Reach out to
-nworby on discord with questions.
+If your vehicle is not on this list, there is a very good chance that already is or can be supported! You will need to
+collect your vehicle's fingerprint.
+
+> At this time, Global B and VIP architectures are unsupported due to CAN bus encryption. If you have a vehicle on one
+> of these architectures and consider yourself to be a hacker/tinkerer type, we would love to hear from you!
+
+### Fingerprinting your vehicle
+You will first need to set up [SSH access](https://github.com/commaai/openpilot/wiki/SSH) to your device. Then, follow
+the fingerprinting instructions posted [here](https://github.com/commaai/openpilot/wiki/Fingerprinting#fingerprinting-10).
+
+> You must follow the **v1.0** instructions. Fingerprint v2.0 is not yet supported for GM vehicles.
+
+Reach out in the [OPGM discord channel](#discussion) with questions, or after you have fingerprinted your vehicle so it
+can be added to OPGM.
 
 ## Installation
 ### Hardware
