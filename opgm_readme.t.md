@@ -64,6 +64,12 @@ You may buy a pedal interceptor from the following vendors:
 ### Software
 For the latest stable build, use the install URL: `installer.comma.ai/opgm/build`
 
+> #### Installation troubleshooting
+> If the installation fails partway through, try the following:
+> * `smiskol.com/fork/opgm/build` as the install URL
+> * Move your device closer to your WiFi router.
+>   * You may plug the Comma Three into a USB power source delivering at least 2A of current.
+
 Ensure that your car is *completely* powered off during software installation, otherwise you may get a "no panda" error.
 To be sure that your car is completely powered down:
 1. Turn the car on and off
