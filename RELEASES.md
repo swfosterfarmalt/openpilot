@@ -1,3 +1,4 @@
+OPGM users please switch to 'build' branch for future updates, see github for info
 Version 0.9.4 (2023-XX-XX)
 ========================
 * Navigate on openpilot

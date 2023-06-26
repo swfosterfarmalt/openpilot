@@ -8,7 +8,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.gm import gmcan
-from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, EV_CAR, CC_ONLY_CAR
+from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, EV_CAR
 from selfdrive.controls.lib.drive_helpers import apply_deadzone
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
@@ -128,7 +128,7 @@ class CarController:
         idx = (self.frame // 4) % 4
 
         at_full_stop = CC.longActive and CS.out.standstill
-        if CC.longActive and self.CP.carFingerprint in CC_ONLY_CAR and not CS.CP.enableGasInterceptor:
+        if CC.longActive and self.CP.frictionBrakeUnavailable and not CS.CP.enableGasInterceptor:
           # Using extend instead of append since the message is only sent intermittently
           can_sends.extend(gmcan.create_gm_cc_spam_command(self.packer_pt, self, CS, actuators))
         elif CS.CP.enableGasInterceptor:
@@ -137,7 +137,7 @@ class CarController:
           # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
           can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
 
-        if self.CP.carFingerprint not in CC_ONLY_CAR:
+        if not self.CP.frictionBrakeUnavailable:
           near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
           friction_brake_bus = CanBus.CHASSIS
           # GM Camera exceptions
@@ -171,7 +171,7 @@ class CarController:
           can_sends.append(gmcan.create_adas_steering_status(CanBus.OBSTACLE, idx))
           can_sends.append(gmcan.create_adas_accelerometer_speed_status(CanBus.OBSTACLE, CS.out.vEgo, idx))
 
-      if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.params.ADAS_KEEPALIVE_STEP == 0 and self.CP.carFingerprint not in CC_ONLY_CAR:
+      if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.params.ADAS_KEEPALIVE_STEP == 0 and not self.CP.frictionBrakeUnavailable:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
 
     else:
@@ -183,11 +183,11 @@ class CarController:
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
         if self.cancel_counter > CAMERA_CANCEL_DELAY_FRAMES:
           self.last_button_frame = self.frame
-          if self.CP.carFingerprint in CC_ONLY_CAR:
+          if self.CP.frictionBrakeUnavailable:
             can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, CS.buttons_counter, CruiseButtons.CANCEL))
           else:
             can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.buttons_counter, CruiseButtons.CANCEL))
-    if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint not in CC_ONLY_CAR:
+    if self.CP.networkLocation == NetworkLocation.fwdCamera and not self.CP.frictionBrakeUnavailable:
       # Silence "Take Steering" alert sent by camera, forward PSCMStatus with HandsOffSWlDetectionStatus=1
       if self.frame % 10 == 0:
         can_sends.append(gmcan.create_pscm_status(self.packer_pt, CanBus.CAMERA, CS.pscm_status))

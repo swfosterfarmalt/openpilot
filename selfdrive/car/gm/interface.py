@@ -4,10 +4,9 @@ from math import fabs, exp
 from panda import Panda
 
 from common.conversions import Conversions as CV
-from common.realtime import sec_since_boot
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
-from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus, CC_ONLY_CAR
+from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
 from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
 from selfdrive.controls.lib.drive_helpers import get_friction
 
@@ -54,7 +53,8 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
 
-    ret.enableGasInterceptor = 0x201 in fingerprint[0]
+    ret.enableGasInterceptor = 0x201 in fingerprint[CanBus.POWERTRAIN]
+    ret.frictionBrakeUnavailable = 0x315 not in fingerprint[CanBus.CHASSIS]
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -67,12 +67,12 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpBP = [5., 35.]
     ret.longitudinalTuning.kiBP = [0.]
 
-    if candidate in CAMERA_ACC_CAR:
+    if candidate in CAMERA_ACC_CAR or ret.frictionBrakeUnavailable:
       ret.experimentalLongitudinalAvailable = not ret.enableGasInterceptor
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarUnavailable = True  # no radar
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
-      if candidate in CC_ONLY_CAR:
+      if ret.frictionBrakeUnavailable:
         ret.pcmCruise = False
         ret.minEnableSpeed = 24 * CV.MPH_TO_MS
         ret.minSteerSpeed = 7 * CV.MPH_TO_MS
@@ -92,13 +92,13 @@ class CarInterface(CarInterfaceBase):
       if experimental_long:
         ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
-        if candidate in CC_ONLY_CAR:
+        if ret.frictionBrakeUnavailable:
           ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CC_LONG
         else:
           ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
 
     else:  # ASCM, OBD-II harness
-      if candidate in CC_ONLY_CAR:
+      if ret.frictionBrakeUnavailable:
         ret.experimentalLongitudinalAvailable = True
         ret.minEnableSpeed = 24 * CV.MPH_TO_MS
         if experimental_long:
@@ -255,7 +255,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate in CC_ONLY_CAR:
+    if ret.frictionBrakeUnavailable:
       ret.minEnableSpeed = 25 * CV.MPH_TO_MS
       ret.stoppingControl = False
 
@@ -312,7 +312,7 @@ class CarInterface(CarInterfaceBase):
     if 0.05 < ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
 
-    if self.CP.carFingerprint in CC_ONLY_CAR and not self.CP.enableGasInterceptor:
+    if self.CP.frictionBrakeUnavailable and not self.CP.enableGasInterceptor:
       if ret.vEgo < 24. * CV.MPH_TO_MS:
         events.add(EventName.speedTooLow)
 

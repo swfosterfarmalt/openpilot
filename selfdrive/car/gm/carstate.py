@@ -7,7 +7,7 @@ from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, CAR, CC_ONLY_CAR
+from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
 
 # PFEIFER - AOL {{
 from selfdrive.controls.always_on_lateral import AlwaysOnLateral, AlwaysOnLateralType
@@ -75,7 +75,7 @@ class CarState(CarStateBase):
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL2"]["PRNDL2"], None))
 
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      if self.CP.carFingerprint in CC_ONLY_CAR:
+      if self.CP.frictionBrakeUnavailable:
         ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
       else:
         ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"]
@@ -130,7 +130,7 @@ class CarState(CarStateBase):
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
     ret.accFaulted = (pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED or
                       pt_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakeUnavailable"] == 1)
-    if self.CP.carFingerprint in CC_ONLY_CAR:
+    if self.CP.frictionBrakeUnavailable:
       ret.accFaulted = False
     if self.CP.enableGasInterceptor:  # Flip CC main logic when pedal is being used for long TODO: switch to cancel cc
       ret.cruiseState.available = (not ret.cruiseState.available)
@@ -139,13 +139,13 @@ class CarState(CarStateBase):
 
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
-    if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint not in CC_ONLY_CAR:
+    if self.CP.networkLocation == NetworkLocation.fwdCamera and not self.CP.frictionBrakeUnavailable:
       ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
       ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
       # openpilot controls nonAdaptive when not pcmCruise
       if self.CP.pcmCruise:
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
-    if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint in CC_ONLY_CAR:
+    if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.frictionBrakeUnavailable:
       ret.cruiseState.speed = (pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"]) * CV.KPH_TO_MS
 
     return ret
@@ -163,7 +163,7 @@ class CarState(CarStateBase):
         ("AEBCmd", 10),
         ("ASCMLKASteeringCmd", 10),
       ]
-      if CP.carFingerprint not in CC_ONLY_CAR:
+      if not CP.frictionBrakeUnavailable:
         signals += [
           ("ACCSpeedSetpoint", "ASCMActiveCruiseControlStatus"),
           ("ACCCruiseState", "ASCMActiveCruiseControlStatus"),
@@ -240,7 +240,7 @@ class CarState(CarStateBase):
       checks += [
         ("ASCMLKASteeringCmd", 0),
       ]
-      if CP.carFingerprint in CC_ONLY_CAR:
+      if CP.frictionBrakeUnavailable:
         signals.remove(("BrakePedalPos", "ECMAcceleratorPos"))
         signals.append(("BrakePedalPosition", "EBCMBrakePedalPosition"))
         checks.remove(("ECMAcceleratorPos", 80))
@@ -256,7 +256,7 @@ class CarState(CarStateBase):
         ("EVDriveMode", 0),
       ]
 
-    if CP.carFingerprint in CC_ONLY_CAR:
+    if CP.frictionBrakeUnavailable:
       signals.append(("CruiseSetSpeed", "ECMCruiseControl"))
       checks.append(("ECMCruiseControl", 10))
 
