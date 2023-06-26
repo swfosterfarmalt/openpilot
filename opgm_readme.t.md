@@ -52,6 +52,12 @@ You may buy a pedal interceptor from the following vendors:
 ### Software
 For the latest stable build, use the install URL: `installer.comma.ai/opgm/build`
 
+Ensure that your car is *completely* powered off during software installation, otherwise you may get a "no panda" error.
+To be sure that your car is completely powered down:
+1. Turn the car on and off
+2. Open and close the driver's door
+3. Wait 5 minutes
+
 ## Discussion
 Come join us on the OPGM channel in the [openpilot community discord](https://discord.gg/KGWEdwSnCU)!
 
