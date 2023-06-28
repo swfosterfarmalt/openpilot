@@ -68,18 +68,13 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0.]
 
     if candidate in CAMERA_ACC_CAR:
-      ret.experimentalLongitudinalAvailable = not ret.enableGasInterceptor
+      ret.experimentalLongitudinalAvailable = True
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarUnavailable = True  # no radar
+      ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
-      if candidate in CC_ONLY_CAR:
-        ret.pcmCruise = False
-        ret.minEnableSpeed = 24 * CV.MPH_TO_MS
-        ret.minSteerSpeed = 7 * CV.MPH_TO_MS
-      else:
-        ret.pcmCruise = True
-        ret.minEnableSpeed = 5 * CV.KPH_TO_MS
-        ret.minSteerSpeed = 10 * CV.KPH_TO_MS
+      ret.minEnableSpeed = 5 * CV.KPH_TO_MS
+      ret.minSteerSpeed = 10 * CV.KPH_TO_MS
 
       # Tuning for experimental long
       ret.longitudinalTuning.kpV = [2.0, 1.5]
@@ -92,25 +87,15 @@ class CarInterface(CarInterfaceBase):
       if experimental_long:
         ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
-        if candidate in CC_ONLY_CAR:
-          ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CC_LONG
-        else:
-          ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
 
     else:  # ASCM, OBD-II harness
-      if candidate in CC_ONLY_CAR:
-        ret.experimentalLongitudinalAvailable = True
-        ret.minEnableSpeed = 24 * CV.MPH_TO_MS
-        if experimental_long:
-          ret.openpilotLongitudinalControl = True
-          ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CC_LONG
-      else:
-        ret.openpilotLongitudinalControl = True
-        ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
       ret.radarUnavailable = RADAR_HEADER_MSG not in fingerprint[CanBus.OBSTACLE] and not docs
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
       # supports stop and go, but initial engage must (conservatively) be above 18mph
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.minSteerSpeed = 7 * CV.MPH_TO_MS
       ret.stoppingDecelRate = 0.02
 
@@ -260,10 +245,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate in CC_ONLY_CAR:
-      ret.minEnableSpeed = 25 * CV.MPH_TO_MS
-      ret.stoppingControl = False
-
     if ret.enableGasInterceptor:
       ret.minEnableSpeed = -1
       ret.pcmCruise = False
@@ -278,6 +259,13 @@ class CarInterface(CarInterfaceBase):
       ret.vEgoStarting = 0.5  # Speed at which the car goes into starting state, when car starts requesting starting accel,
       # vEgoStarting needs to be > or == vEgoStopping to avoid state transition oscillation
       ret.stoppingControl = True
+
+    elif candidate in CC_ONLY_CAR:
+      ret.experimentalLongitudinalAvailable = False
+      ret.minEnableSpeed = 24 * CV.MPH_TO_MS
+      ret.openpilotLongitudinalControl = True
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CC_LONG
+      ret.pcmCruise = False
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
