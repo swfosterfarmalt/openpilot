@@ -87,9 +87,6 @@ def create_friction_brake_command(packer, bus, apply_brake, idx, enabled, near_s
   if apply_brake > 0:
     mode = 0xa
 
-  if near_stop:
-    mode = 0xb
-
   if at_full_stop:
     mode = 0xd
 
