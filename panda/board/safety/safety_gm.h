@@ -229,7 +229,7 @@ static int gm_tx_hook(CANPacket_t *to_send) {
     int button = (GET_BYTE(to_send, 5) >> 4) & 0x7U;
 
     bool allowed_btn = false;
-    if (gm_pcm_cruise) {
+    if (gm_hw == GM_CAM) {
       allowed_btn |= cruise_engaged_prev && (button == GM_BTN_CANCEL);
     }
     // For standard CC, allow spamming of SET / RESUME
