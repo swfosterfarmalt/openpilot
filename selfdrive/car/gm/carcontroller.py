@@ -128,9 +128,10 @@ class CarController:
         idx = (self.frame // 4) % 4
 
         at_full_stop = CC.longActive and CS.out.standstill
-        if CC.longActive and self.CP.carFingerprint in CC_ONLY_CAR and not CS.CP.enableGasInterceptor:
-          # Using extend instead of append since the message is only sent intermittently
-          can_sends.extend(gmcan.create_gm_cc_spam_command(self.packer_pt, self, CS, actuators))
+        if self.CP.carFingerprint in CC_ONLY_CAR and not CS.CP.enableGasInterceptor:
+          if CC.longActive:
+            # Using extend instead of append since the message is only sent intermittently
+            can_sends.extend(gmcan.create_gm_cc_spam_command(self.packer_pt, self, CS, actuators))
         elif CS.CP.enableGasInterceptor:
           can_sends.append(gmcan.create_gm_pedal_interceptor_command(self.packer_pt, CS, CC, actuators, idx))
         else:
