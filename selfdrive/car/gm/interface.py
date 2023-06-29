@@ -261,6 +261,7 @@ class CarInterface(CarInterfaceBase):
       ret.stoppingControl = True
 
     elif candidate in CC_ONLY_CAR:
+      ret.radarUnavailable = True
       ret.experimentalLongitudinalAvailable = False
       ret.minEnableSpeed = 24 * CV.MPH_TO_MS
       ret.openpilotLongitudinalControl = True
