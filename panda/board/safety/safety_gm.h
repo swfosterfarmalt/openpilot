@@ -235,12 +235,11 @@ static int gm_tx_hook(CANPacket_t *to_send) {
     int button = (GET_BYTE(to_send, 5) >> 4) & 0x7U;
 
     bool allowed_btn = false;
-    if (gm_hw == GM_CAM) {
-      allowed_btn |= cruise_engaged_prev && (button == GM_BTN_CANCEL);
-    }
-    // For standard CC, allow spamming of SET / RESUME
     if (gm_cc_long) {
-      allowed_btn |= cruise_engaged_prev && (gm_hw == GM_CAM) && (button == GM_BTN_SET || button == GM_BTN_RESUME || button == GM_BTN_UNPRESS);
+      // For standard CC, allow spamming of SET / RESUME
+      allowed_btn = ((button == GM_BTN_RESUME) || (button == GM_BTN_SET)) && cruise_engaged_prev;
+    } else if (gm_pcm_cruise) {
+      allowed_btn = (button == GM_BTN_CANCEL) && cruise_engaged_prev;
     }
     // TODO: With a Pedal, CC needs to be canceled
 
@@ -290,8 +289,8 @@ static const addr_checks* gm_init(uint16_t param) {
   } else {
   }
 
-  gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
   gm_cc_long = GET_FLAG(param, GM_PARAM_CC_LONG);
+  gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG) && !gm_cc_long;
   gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long && !gm_cc_long;
   return &gm_rx_checks;
 }
