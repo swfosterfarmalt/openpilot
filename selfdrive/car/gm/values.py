@@ -67,8 +67,8 @@ class CarControllerParams:
   def get_max_regen_acceleration_bolt_one_pedal(v_ego):
     # Bolt EV/EUV regen measured by decelerating from various speeds to a stop in one-pedal mode.
     # Deceleration appears to max out around ~5mph, at which point is decreases linearly until 0mph.
-    return interp(v_ego, [25., 2.25, 0.],  # m/s
-                         [-1.6, -2.1, -0.2])  # m/s^2
+    return interp(v_ego, [0., 2.25, 25.],  # m/s
+                         [-0.2, -2.1, -1.6])  # m/s^2
 
   def gas_lookup_bolt_one_pedal(self, accel, max_regen_acceleration):
     """Lookup function for Bolt EUV with gas interceptor, in single pedal mode."""
