@@ -84,6 +84,7 @@ class CarController:
     if self.CP.openpilotLongitudinalControl:
       # Gas/regen, brakes, and UI commands - all at 25Hz
       if self.frame % 4 == 0:
+        gas_cmd = self.params.INACTIVE_REGEN
         interceptor_gas_cmd = 0
         if not CC.longActive:
           # ASCM sends max regen when not enabled
@@ -93,7 +94,9 @@ class CarController:
           self.apply_gas, self.apply_brake = self.params.compute_gas_brake(actuators.accel, CS)
           if self.CP.enableGasInterceptor:
             interceptor_gas_cmd = self.apply_gas
-            self.apply_gas = self.params.INACTIVE_REGEN
+            gas_cmd = self.params.INACTIVE_REGEN
+          else:
+            gas_cmd = self.apply_gas
 
         idx = (self.frame // 4) % 4
 
@@ -109,7 +112,7 @@ class CarController:
         if self.CP.enableGasInterceptor:
           can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd / 255., idx))
         # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled and not self.CP.enableGasInterceptor, at_full_stop))
+        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, gas_cmd, idx, CC.enabled, at_full_stop))
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
         # Send dashboard UI commands (ACC status)
