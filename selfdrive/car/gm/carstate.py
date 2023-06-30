@@ -77,11 +77,11 @@ class CarState(CarStateBase):
       self.single_pedal_mode = (pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1) or (ret.gearShifter == GearShifter.low)
 
     if self.CP.enableGasInterceptor:
-      ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
-      ret.gasPressed = ret.gas > 1e-5
-    else:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2
       ret.gasPressed = ret.gas > 15
+    else:
+      ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
+      ret.gasPressed = ret.gas > 1e-5
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]
