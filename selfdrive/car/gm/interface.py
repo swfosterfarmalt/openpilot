@@ -87,7 +87,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0.]
 
     if candidate in CAMERA_ACC_CAR:
-      ret.experimentalLongitudinalAvailable = True
+      ret.experimentalLongitudinalAvailable = not ret.enableGasInterceptor
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarUnavailable = True  # no radar
       ret.pcmCruise = True
@@ -102,7 +102,7 @@ class CarInterface(CarInterfaceBase):
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
 
-      if experimental_long:
+      if experimental_long or ret.enableGasInterceptor:
         ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
@@ -250,8 +250,6 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor:
       ret.minEnableSpeed = -1
-      ret.pcmCruise = False
-      ret.openpilotLongitudinalControl = True
       # Note: Low speed, stop and go not tested. Should be fairly smooth on highway
       ret.longitudinalTuning.kpV = [0.35, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.0]
