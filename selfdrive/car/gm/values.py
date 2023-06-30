@@ -70,40 +70,40 @@ class CarControllerParams:
     return interp(v_ego, [25., 2.25, 0.],  # m/s
                          [-1.6, -2.1, -0.2])  # m/s^2
 
-  def gas_lookup_bolt_one_pedal(self, accel, v_ego):
+  def gas_lookup_bolt_one_pedal(self, accel, max_regen_acceleration):
     """Lookup function for Bolt EUV with gas interceptor, in single pedal mode."""
-    max_regen_acceleration = self.get_max_regen_acceleration_bolt_one_pedal(v_ego)
     bp = [max_regen_acceleration, 0., self.ACCEL_MAX]
     v = [0., self.SINGLE_PEDAL_ZERO, 255.]
     return interp(accel, bp, v)
 
-  def brake_lookup_bolt_one_pedal(self, accel, v_ego):
+  def brake_lookup_bolt_one_pedal(self, accel, max_regen_acceleration):
     """Lookup function for Bolt EUV with gas interceptor, in single pedal mode."""
-    max_regen_acceleration = self.get_max_regen_acceleration_bolt_one_pedal(v_ego)
     bp = [self.ACCEL_MIN, max_regen_acceleration]
     v = [self.MAX_BRAKE, 0.]
     return interp(accel, bp, v)
 
-  def gas_lookup_bolt_interceptor(self, accel, v_ego):
+  def gas_lookup_bolt_interceptor(self, accel):
     """Lookup function for Bolt EUV with gas interceptor, not in single pedal mode."""
     bp = [-1., self.ACCEL_MAX]
     v = [0., 255.]
     return interp(accel, bp, v)
 
-  def gas_lookup(self, accel, v_ego):
+  def gas_lookup(self, accel):
     return interp(accel, self.GAS_LOOKUP_BP, self.GAS_LOOKUP_V)
 
-  def brake_lookup(self, accel, v_ego):
+  def brake_lookup(self, accel):
     return interp(accel, self.BRAKE_LOOKUP_BP, self.BRAKE_LOOKUP_V)
 
-  def get_accel_lookup_functions(self, CS):
+  def compute_gas_brake(self, accel, CS):
     if self.fingerprint == CAR.BOLT_EUV and CS.CP.enableGasInterceptor:
+      max_regen_acceleration = self.get_max_regen_acceleration_bolt_one_pedal(CS.out.vEgo)
       if CS.single_pedal_mode:
-        return self.gas_lookup_bolt_one_pedal, self.brake_lookup_bolt_one_pedal
+        g, b = self.gas_lookup_bolt_one_pedal(accel, max_regen_acceleration), self.brake_lookup_bolt_one_pedal(accel, max_regen_acceleration)
       else:
-        return self.gas_lookup_bolt_interceptor, self.brake_lookup
+        g, b = self.gas_lookup_bolt_interceptor(accel), self.brake_lookup(accel)
     else:
-      return self.gas_lookup, self.brake_lookup
+      g, b = self.gas_lookup(accel), self.brake_lookup(accel)
+    return int(round(g)), int(round(b))
 
 
 class CAR:

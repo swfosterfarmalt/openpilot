@@ -91,9 +91,7 @@ class CarController:
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         else:
-          gas_fn, brake_fn = self.params.get_accel_lookup_functions(CS)
-          self.apply_gas = int(round(gas_fn(actuators.accel, CS.out.vEgo)))
-          self.apply_brake = int(round(brake_fn(actuators.accel, CS.out.vEgo)))
+          self.apply_gas, self.apply_brake = self.params.compute_gas_brake(actuators.accel, CS)
           if self.CP.enableGasInterceptor:
             interceptor_gas_cmd = self.apply_gas
             self.apply_gas = self.params.INACTIVE_REGEN
