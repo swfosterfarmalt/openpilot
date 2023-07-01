@@ -157,7 +157,6 @@ class CarController:
 
         idx = (self.frame // 4) % 4
 
-        at_full_stop = CC.longActive and CS.out.standstill
         if self.CP.flags & GMFlags.CC_LONG.value:
           if CC.longActive and CS.out.vEgo > self.CP.minEnableSpeed:
             # Using extend instead of append since the message is only sent intermittently
