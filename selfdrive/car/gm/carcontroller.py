@@ -127,7 +127,7 @@ class CarController:
           pre_enable = True
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = self.params.MAX_BRAKE
-        elif at_full_stop:
+        elif at_full_stop and not CC.cruiseControl.resume:
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = self.params.MAX_BRAKE
         else:
