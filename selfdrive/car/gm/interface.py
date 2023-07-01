@@ -254,12 +254,12 @@ class CarInterface(CarInterfaceBase):
 
       if candidate in CC_ONLY_CAR:
         # Note: Low speed, stop and go not tested. Should be fairly smooth on highway
-        ret.longitudinalTuning.kpBP = [0.5, 5., 35.]
-        ret.longitudinalTuning.kpV = [0.0, 0.35, 0.5]
-        ret.longitudinalTuning.kiBP = [0.2, 1., 35.0]
-        ret.longitudinalTuning.kiV = [0.0, 0.05, 0.0]
-        ret.longitudinalTuning.kf = 0.0
-        ret.stoppingDecelRate = 2.0
+        ret.longitudinalTuning.kpBP = [5., 35.]
+        ret.longitudinalTuning.kpV = [0.35, 0.5]
+        ret.longitudinalTuning.kiBP = [0., 35.0]
+        ret.longitudinalTuning.kiV = [0.1, 0.1]
+        ret.longitudinalTuning.kf = 0.15
+        ret.stoppingDecelRate = 0.8
 
     elif candidate in CC_ONLY_CAR:
       ret.radarUnavailable = True
