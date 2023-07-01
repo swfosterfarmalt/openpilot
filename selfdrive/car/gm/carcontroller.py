@@ -153,10 +153,7 @@ class CarController:
             # Using extend instead of append since the message is only sent intermittently
             can_sends.extend(gmcan.create_gm_cc_spam_command(self.packer_pt, self, CS, actuators))
         elif self.CP.flags & GMFlags.PEDAL_LONG.value:
-          can_sends.append(gmcan.create_gm_pedal_interceptor_command(self.packer_pt, CS, CC, actuators, idx))
-        else:
-          # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
-          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
+          can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd, idx))
 
         if self.CP.carFingerprint not in CC_ONLY_CAR:
           friction_brake_bus = CanBus.CHASSIS
@@ -165,6 +162,9 @@ class CarController:
           if self.CP.networkLocation == NetworkLocation.fwdCamera:
             at_full_stop = at_full_stop and stopping
             friction_brake_bus = CanBus.POWERTRAIN
+
+          # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
+          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
           can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake, idx, CC.enabled, near_stop, pre_enable, at_full_stop, self.CP))
 
           # Send dashboard UI commands (ACC status)
