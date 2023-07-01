@@ -16,7 +16,9 @@ master branch. The latest build was done on {{time.Now.Format "January 02, 2006"
   * Also provides full regen on GM Bolt EV/EUV with ACC (*in process of upstreaming*)
 * CC long, aka "[redneck ACC](https://www.youtube.com/watch?v=41wZ1EAmf94)" to automatically adjust nonadaptive cruise
 control
+  * > CC long is not a substitute for ACC. It is incapable of reducing the vehicle speed below 24mph.
 * Neural network steering control, credit twilsonco
+* Always On Longitudinal (AOL), credit pfeiferj
 
 ## Supported vehicles list
 OPGM is capable of supportng vehicles on the Global A architecture that have factory LKAS. Currently supported vehicles
@@ -76,16 +78,25 @@ To be sure that your car is completely powered down:
 2. Open and close the driver's door
 3. Wait 5 minutes
 
+## Known issues
+* CC long may cause a controls mismatch error if driving under 24mph.
+* AOL may be broken on pedal interceptor vehicles.
+* The car must be restarted after enabling AOL in the toggles.
+* Curve hugging and laneline crossing are known issues of upstream openpilot.
+
 ## Discussion
 Come join us on the OPGM channel in the [openpilot community discord](https://discord.gg/KGWEdwSnCU)!
 
-### Contributing
+## Contributing
 Feel free to open a pull request against the `dev` branch.
 
-### Credits
+## Credits
 * [comma.ai](https://comma.ai) for openpilot
 * jshuler
 * nworby
 * twilsonco
 * k1mu
 * kliu
+
+# License
+OPGM is under the MIT license. See [LICENSE](LICENSE) for more information.
