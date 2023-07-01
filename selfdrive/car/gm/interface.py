@@ -4,7 +4,6 @@ from math import fabs, exp
 from panda import Panda
 
 from common.conversions import Conversions as CV
-from common.realtime import sec_since_boot
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus, CC_ONLY_CAR
@@ -84,7 +83,7 @@ class CarInterface(CarInterfaceBase):
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
 
-      if experimental_long and candidate not in CC_ONLY_CAR:
+      if experimental_long:
         ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
@@ -265,7 +264,8 @@ class CarInterface(CarInterfaceBase):
       ret.experimentalLongitudinalAvailable = False
       ret.minEnableSpeed = 24 * CV.MPH_TO_MS
       ret.openpilotLongitudinalControl = True
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CC_LONG
+      # FIXME
+      # ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CC_LONG
       ret.pcmCruise = False
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
