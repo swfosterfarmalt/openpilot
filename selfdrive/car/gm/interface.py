@@ -247,6 +247,7 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor:
       ret.flags |= GMFlags.PEDAL_LONG.value
+      ret.networkLocation = NetworkLocation.fwdCamera
       ret.minEnableSpeed = -1
       ret.pcmCruise = False
       ret.openpilotLongitudinalControl = True
@@ -256,9 +257,6 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [0.1, 0.1]
       ret.longitudinalTuning.kf = 0.15
       ret.stoppingDecelRate = 0.8  # reach stopping target smoothly, brake_travel/s while trying to stop
-      ret.vEgoStopping = 0.5  # Speed at which the car goes into stopping state, when car starts requesting stopping accel
-      ret.vEgoStarting = 0.5  # Speed at which the car goes into starting state, when car starts requesting starting accel,
-      # vEgoStarting needs to be > or == vEgoStopping to avoid state transition oscillation
       ret.stoppingControl = True
 
     elif candidate in CC_ONLY_CAR:
