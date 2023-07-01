@@ -143,7 +143,7 @@ class CarController:
           # FIXME: brakes aren't applied immediately when enabling at a stop
           if stopping:
             self.apply_gas = self.params.INACTIVE_REGEN
-          interceptor_gas_cmd = self.apply_gas
+          interceptor_gas_cmd = clip((self.apply_gas - self.params.INACTIVE_REGEN) / (self.params.MAX_GAS - self.params.INACTIVE_REGEN), 0., 1.)
 
         idx = (self.frame // 4) % 4
 
