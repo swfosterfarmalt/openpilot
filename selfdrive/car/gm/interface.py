@@ -306,9 +306,9 @@ class CarInterface(CarInterfaceBase):
     if 0.05 < ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
 
-    if self.CP.carFingerprint in CC_ONLY_CAR and not self.CP.enableGasInterceptor:
-      if ret.vEgo < 24. * CV.MPH_TO_MS:
-        events.add(EventName.speedTooLow)
+    # if self.CP.carFingerprint in CC_ONLY_CAR and not self.CP.enableGasInterceptor:
+    #   if ret.vEgo < 24. * CV.MPH_TO_MS:
+    #     events.add(EventName.speedTooLow)
 
     if self.CP.enableGasInterceptor and self.CP.transmissionType == TransmissionType.direct and not self.CS.single_pedal_mode:
       events.add(EventName.pedalInterceptorNoBrake)
