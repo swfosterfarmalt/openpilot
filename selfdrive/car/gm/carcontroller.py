@@ -129,6 +129,10 @@ class CarController:
         elif at_full_stop and not CC.cruiseControl.resume:
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = self.params.MAX_BRAKE
+        elif near_stop and CC.cruiseControl.resume and self.CP.enableGasInterceptor:
+          interceptor_gas_cmd = self.params.SNG_INTERCEPTOR_GAS
+          self.apply_gas = self.params.INACTIVE_REGEN
+          self.apply_brake = 0
         else:
           brake_accel = actuators.accel + accel_g * interp(CS.out.vEgo, BRAKE_PITCH_FACTOR_BP, BRAKE_PITCH_FACTOR_V)
           if self.CP.carFingerprint in EV_CAR:
@@ -138,7 +142,8 @@ class CarController:
           else:
             self.apply_gas = int(round(interp(accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
             self.apply_brake = int(round(interp(brake_accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
-          interceptor_gas_cmd = clip((self.apply_gas - self.params.INACTIVE_REGEN) / (self.params.MAX_GAS - self.params.INACTIVE_REGEN), 0., 1.)
+          if self.CP.carFingerprint in CC_ONLY_CAR:
+            interceptor_gas_cmd = clip((self.apply_gas - self.params.INACTIVE_REGEN) / (self.params.MAX_GAS - self.params.INACTIVE_REGEN), 0., 1.)
 
         idx = (self.frame // 4) % 4
 
