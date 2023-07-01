@@ -138,7 +138,7 @@ class CarController:
           else:
             self.apply_gas = int(round(interp(accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
             self.apply_brake = int(round(interp(brake_accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
-          interceptor_gas_cmd = self.apply_gas
+          interceptor_gas_cmd = clip((self.apply_gas - self.params.INACTIVE_REGEN) / (self.params.MAX_GAS - self.params.INACTIVE_REGEN), 0., 1.)
 
         idx = (self.frame // 4) % 4
 
