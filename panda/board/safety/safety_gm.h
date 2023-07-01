@@ -61,6 +61,7 @@ addr_checks gm_rx_checks = {gm_addr_checks, GM_RX_CHECK_LEN};
 const uint16_t GM_PARAM_HW_CAM = 1;
 const uint16_t GM_PARAM_HW_CAM_LONG = 2;
 const uint16_t GM_PARAM_CC_LONG = 4;
+const uint16_t GM_PARAM_HW_ASCM_LONG = 8;
 
 enum {
   GM_BTN_UNPRESS = 1,
@@ -271,7 +272,7 @@ static int gm_fwd_hook(int bus_num, int addr) {
 static const addr_checks* gm_init(uint16_t param) {
   gm_hw = GET_FLAG(param, GM_PARAM_HW_CAM) ? GM_CAM : GM_ASCM;
 
-  if (gm_hw == GM_ASCM) {
+  if (gm_hw == GM_ASCM || GET_FLAG(param, GM_PARAM_HW_ASCM_LONG)) {
     gm_long_limits = &GM_ASCM_LONG_LIMITS;
   } else if (gm_hw == GM_CAM) {
     gm_long_limits = &GM_CAM_LONG_LIMITS;
