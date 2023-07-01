@@ -247,6 +247,8 @@ class CarInterface(CarInterfaceBase):
     if ret.enableGasInterceptor:
       ret.flags |= GMFlags.PEDAL_LONG.value
       ret.networkLocation = NetworkLocation.fwdCamera
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
       ret.minEnableSpeed = -1
       ret.pcmCruise = False
       ret.openpilotLongitudinalControl = True
