@@ -310,7 +310,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowSteerSpeed)
 
     if self.CP.carFingerprint in CC_ONLY_CAR and not self.CP.enableGasInterceptor:
-      if ret.vEgo < self.CP.minEnableSpeed:
+      if ret.vEgo < self.CP.minEnableSpeed and ret.cruiseState.enabled:
         events.add(EventName.speedTooLow)
 
     if self.CP.enableGasInterceptor and self.CP.transmissionType == TransmissionType.direct and not self.CS.single_pedal_mode:

@@ -123,17 +123,21 @@ class CarController:
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         elif stopping and CS.out.brakePressed:
+          # Foot on brake, pre-enable phase
           pre_enable = True
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = self.params.MAX_BRAKE
         elif at_full_stop and not CC.cruiseControl.resume:
+          # Full stop
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = self.params.MAX_BRAKE
         elif near_stop and CC.cruiseControl.resume and self.CP.enableGasInterceptor:
+          # Resume from stop
           interceptor_gas_cmd = self.params.SNG_INTERCEPTOR_GAS
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         else:
+          # Normal operation
           brake_accel = actuators.accel + accel_g * interp(CS.out.vEgo, BRAKE_PITCH_FACTOR_BP, BRAKE_PITCH_FACTOR_V)
           if self.CP.carFingerprint in EV_CAR:
             self.params.update_ev_gas_brake_threshold(CS.out.vEgo)
@@ -143,17 +147,19 @@ class CarController:
             self.apply_gas = int(round(interp(accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
             self.apply_brake = int(round(interp(brake_accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
           if self.CP.carFingerprint in CC_ONLY_CAR:
+            # gas interceptor only used for full long control on cars without ACC
             interceptor_gas_cmd = clip((self.apply_gas - self.params.INACTIVE_REGEN) / (self.params.MAX_GAS - self.params.INACTIVE_REGEN), 0., 1.)
 
         idx = (self.frame // 4) % 4
 
         at_full_stop = CC.longActive and CS.out.standstill
-        if self.CP.carFingerprint in CC_ONLY_CAR and not self.CP.enableGasInterceptor:
-          if CC.longActive:
+        if self.CP.enableGasInterceptor:
+          can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd, idx))
+        elif self.CP.carFingerprint in CC_ONLY_CAR:
+          # CC long
+          if CC.longActive and CS.out.vEgo > self.CP.minEnableSpeed:
             # Using extend instead of append since the message is only sent intermittently
             can_sends.extend(gmcan.create_gm_cc_spam_command(self.packer_pt, self, CS, actuators))
-        elif self.CP.enableGasInterceptor:
-          can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd, idx))
 
         if self.CP.carFingerprint not in CC_ONLY_CAR:
           friction_brake_bus = CanBus.CHASSIS
