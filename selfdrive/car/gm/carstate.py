@@ -54,7 +54,7 @@ class CarState(CarStateBase):
     self.loopback_lka_steering_cmd_updated = len(loopback_cp.vl_all["ASCMLKASteeringCmd"]["RollingCounter"]) > 0
     if self.loopback_lka_steering_cmd_updated:
       self.loopback_lka_steering_cmd_ts_nanos = loopback_cp.ts_nanos["ASCMLKASteeringCmd"]["RollingCounter"]
-    if self.CP.networkLocation == NetworkLocation.fwdCamera:
+    if self.CP.networkLocation == NetworkLocation.fwdCamera and False:  # TODO: EB
       self.pt_lka_steering_cmd_counter = pt_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
       self.cam_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
@@ -75,7 +75,7 @@ class CarState(CarStateBase):
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(pt_cp.vl["ECMPRDNL2"]["PRNDL2"], None))
 
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      if self.CP.carFingerprint in CC_ONLY_CAR:
+      if self.CP.carFingerprint in CC_ONLY_CAR or True:  # TODO: EB
         ret.brake = pt_cp.vl["EBCMBrakePedalPosition"]["BrakePedalPosition"] / 0xd0
       else:
         ret.brake = pt_cp.vl["ECMAcceleratorPos"]["BrakePedalPos"]
@@ -134,7 +134,7 @@ class CarState(CarStateBase):
 
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
-    if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint not in CC_ONLY_CAR:
+    if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint not in CC_ONLY_CAR and False:  # TODO: EB
       ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
       ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
       # openpilot controls nonAdaptive when not pcmCruise
@@ -151,7 +151,7 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = []
     checks = []
-    if CP.networkLocation == NetworkLocation.fwdCamera:
+    if CP.networkLocation == NetworkLocation.fwdCamera and False:  # TODO: EB
       signals += [
         ("AEBCmdActive", "AEBCmd"),
         ("RollingCounter", "ASCMLKASteeringCmd"),
@@ -237,7 +237,7 @@ class CarState(CarStateBase):
       checks += [
         ("ASCMLKASteeringCmd", 0),
       ]
-      if CP.carFingerprint in CC_ONLY_CAR:
+      if CP.carFingerprint in CC_ONLY_CAR or CP.enableGasInterceptor:
         signals.remove(("BrakePedalPos", "ECMAcceleratorPos"))
         signals.append(("BrakePedalPosition", "EBCMBrakePedalPosition"))
         checks.remove(("ECMAcceleratorPos", 80))
