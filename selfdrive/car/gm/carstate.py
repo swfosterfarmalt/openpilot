@@ -130,7 +130,7 @@ class CarState(CarStateBase):
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
     ret.accFaulted = (pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED or
                       pt_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakeUnavailable"] == 1)
-    if self.CP.carFingerprint in CC_ONLY_CAR or self.CP.enableGasInterceptor:  # FIXME
+    if self.CP.carFingerprint in CC_ONLY_CAR:
       ret.accFaulted = False
     self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
