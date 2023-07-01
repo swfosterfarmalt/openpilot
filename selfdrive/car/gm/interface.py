@@ -100,6 +100,9 @@ class CarInterface(CarInterfaceBase):
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]
       ret.longitudinalTuning.kiV = [0.36]
+      if ret.enableGasInterceptor:
+        # Need to set ASCM long limits when using pedal interceptor, instead of camera ACC long limits
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_ASCM_LONG
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
