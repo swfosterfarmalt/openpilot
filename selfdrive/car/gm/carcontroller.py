@@ -1,5 +1,6 @@
 from cereal import car
 from common.conversions import Conversions as CV
+from common.numpy_fast import interp
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits, create_gas_interceptor_command
@@ -90,13 +91,20 @@ class CarController:
           # ASCM sends max regen when not enabled
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
-        else:
-          self.apply_gas, self.apply_brake = self.params.compute_gas_brake(actuators.accel, CS)
-          if self.CP.enableGasInterceptor:
-            interceptor_gas_cmd = self.apply_gas
-            gas_cmd = self.params.INACTIVE_REGEN
+        elif self.CP.enableGasInterceptor and self.CP.carFingerprint == CAR.BOLT_EUV:
+          gas_cmd = self.params.INACTIVE_REGEN
+          if CS.single_pedal_mode:
+            max_regen_acceleration = self.params.get_max_regen_acceleration_bolt_one_pedal(CS.out.vEgo)
+            self.apply_gas = int(self.params.gas_lookup_bolt_one_pedal(actuators.accel, max_regen_acceleration))
+            self.apply_brake = int(self.params.brake_lookup_bolt_one_pedal(actuators.brake, max_regen_acceleration))
           else:
-            gas_cmd = self.apply_gas
+            self.apply_gas = int(self.params.gas_lookup_bolt_interceptor(actuators.accel))
+            self.apply_brake = int(self.params.brake_lookup(actuators.brake))
+          interceptor_gas_cmd = self.apply_gas
+        else:
+          self.apply_gas = int(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V))
+          self.apply_brake = int(interp(actuators.brake, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V))
+          gas_cmd = self.apply_gas
 
         idx = (self.frame // 4) % 4
 
