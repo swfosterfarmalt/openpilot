@@ -266,6 +266,10 @@ class CarInterface(CarInterfaceBase):
         ret.longitudinalTuning.kiV = [0.1, 0.1]
         ret.longitudinalTuning.kf = 0.15
         ret.stoppingDecelRate = 0.8
+      else:  # Pedal used for SNG, ACC for longitudinal control otherwise
+        ret.startingState = True
+        ret.vEgoStopping = 0.25
+        ret.vEgoStarting = 0.25
 
     elif candidate in CC_ONLY_CAR:
       ret.flags |= GMFlags.CC_LONG.value
