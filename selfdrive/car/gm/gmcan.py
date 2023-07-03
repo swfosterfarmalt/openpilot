@@ -240,6 +240,7 @@ def create_gm_cc_spam_command(packer, controller, CS, actuators):
   # TODO: Cleanup the timing - normal is every 30ms...
   if (cruiseBtn != CruiseButtons.INIT) and ((controller.frame - controller.last_button_frame) * DT_CTRL > rate):
     controller.last_button_frame = controller.frame
-    return [create_buttons(packer, CanBus.POWERTRAIN, CS.buttons_counter, cruiseBtn)]
+    idx = (CS.buttons_counter + 1) % 4  # Need to predict the next idx for '22-23 EUV
+    return [create_buttons(packer, CanBus.POWERTRAIN, idx, cruiseBtn)]
   else:
     return []
