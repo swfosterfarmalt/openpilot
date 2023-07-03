@@ -313,7 +313,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowEngageSpeed)
     if ret.cruiseState.standstill and not self.CP.autoResumeSng:
       events.add(EventName.resumeRequired)
-    if 0.05 < ret.vEgo < self.CP.minSteerSpeed:
+    elif ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
 
     if self.CP.carFingerprint in CC_ONLY_CAR and not self.CP.enableGasInterceptor:
