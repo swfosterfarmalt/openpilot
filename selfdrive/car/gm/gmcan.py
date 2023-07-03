@@ -229,7 +229,9 @@ def create_gm_cc_spam_command(packer, controller, CS, actuators):
 
   # We will spam the up/down buttons till we reach the desired speed
   rate = 0.64
-  if speedDiff < 0:
+  if speedActuator < speedSetPoint == CS.CP.minEnableSpeed:
+    cruiseBtn = CruiseButtons.CANCEL
+  elif speedDiff < 0:
     cruiseBtn = CruiseButtons.DECEL_SET
     rate = 0.2
   elif speedDiff > 0:
