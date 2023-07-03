@@ -322,7 +322,9 @@ class CarInterface(CarInterfaceBase):
     if (self.CP.flags & GMFlags.CC_LONG.value) and ret.vEgo < self.CP.minEnableSpeed and ret.cruiseState.enabled:
       events.add(EventName.speedTooLow)
 
-    if (self.CP.flags & GMFlags.PEDAL_LONG.value) and self.CP.transmissionType == TransmissionType.direct and not self.CS.single_pedal_mode:
+    if (self.CP.flags & GMFlags.PEDAL_LONG.value) and \
+      self.CP.transmissionType == TransmissionType.direct and \
+      not self.CS.single_pedal_mode:
       events.add(EventName.pedalInterceptorNoBrake)
 
     ret.events = events.to_msg()
