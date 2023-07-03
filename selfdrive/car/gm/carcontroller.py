@@ -124,12 +124,7 @@ class CarController:
         elif actuators.longControlState == LongCtrlState.stopping:
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = self.params.MAX_BRAKE
-        elif at_full_stop and not CC.cruiseControl.resume:
-          # Full stop
-          self.apply_gas = self.params.INACTIVE_REGEN
-          self.apply_brake = self.params.MAX_BRAKE
-        elif near_stop and CC.cruiseControl.resume and self.CP.enableGasInterceptor:
-          # Resume from stop
+        elif actuators.longControlState == LongCtrlState.starting:
           interceptor_gas_cmd = self.params.SNG_INTERCEPTOR_GAS
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
