@@ -122,13 +122,13 @@ class CarController:
           # ASCM sends max regen when not enabled
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
-        elif actuators.longControlState == LongCtrlState.stopping:
-          self.apply_gas = self.params.INACTIVE_REGEN
-          self.apply_brake = self.params.MAX_BRAKE
         elif actuators.longControlState == LongCtrlState.starting:
           interceptor_gas_cmd = self.params.SNG_INTERCEPTOR_GAS
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
+        elif at_full_stop:
+          self.apply_gas = self.params.INACTIVE_REGEN
+          self.apply_brake = self.params.MAX_BRAKE
         else:
           # Normal operation
           brake_accel = actuators.accel + accel_g * interp(CS.out.vEgo, BRAKE_PITCH_FACTOR_BP, BRAKE_PITCH_FACTOR_V)
