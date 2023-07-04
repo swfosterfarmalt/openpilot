@@ -7,7 +7,7 @@ from common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, CAR, CC_ONLY_CAR
+from selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, CC_ONLY_CAR, GMFlags
 
 # PFEIFER - AOL {{
 from selfdrive.controls.always_on_lateral import AlwaysOnLateral, AlwaysOnLateralType
@@ -142,7 +142,7 @@ class CarState(CarStateBase):
       # openpilot controls nonAdaptive when not pcmCruise
       if self.CP.pcmCruise:
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
-    if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint in CC_ONLY_CAR:
+    if self.CP.flags & GMFlags.CC_LONG:
       ret.cruiseState.speed = (pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"]) * CV.KPH_TO_MS
 
     return ret
@@ -253,7 +253,7 @@ class CarState(CarStateBase):
         ("EVDriveMode", 0),
       ]
 
-    if CP.carFingerprint in CC_ONLY_CAR:
+    if CP.flags & GMFlags.CC_LONG:
       signals.append(("CruiseSetSpeed", "ECMCruiseControl"))
       checks.append(("ECMCruiseControl", 10))
 
