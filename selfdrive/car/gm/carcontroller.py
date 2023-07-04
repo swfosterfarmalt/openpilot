@@ -180,6 +180,12 @@ class CarController:
       if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.params.ADAS_KEEPALIVE_STEP == 0 and self.CP.carFingerprint not in CC_ONLY_CAR:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
 
+      # TODO: integrate this with the code block below?
+      if self.CP.enableGasInterceptor and self.CP.carFingerprint in CC_ONLY_CAR and CS.cruiseState.enabled:
+        if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
+          self.last_button_frame = self.frame
+          can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, CS.buttons_counter, CruiseButtons.CANCEL))
+
     else:
       # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
       # A delayed cancellation allows camera to cancel and avoids a fault when user depresses brake quickly
