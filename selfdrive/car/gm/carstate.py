@@ -75,6 +75,7 @@ class CarState(CarStateBase):
       # Regen braking is braking
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
       self.single_pedal_mode = (pt_cp.vl["EVDriveMode"]["SinglePedalModeActive"] == 1) or (ret.gearShifter == GearShifter.low)
+      self.single_pedal_mode = True  # EB debug
 
     if self.CP.enableGasInterceptor:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2
