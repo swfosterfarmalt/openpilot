@@ -127,7 +127,7 @@ class CarController:
           self.apply_brake = 0
         elif at_full_stop:
           self.apply_gas = self.params.INACTIVE_REGEN
-          self.apply_brake = int(self.CP.stopAccel)
+          self.apply_brake = self.params.MAX_BRAKE
         else:
           # Normal operation
           brake_accel = actuators.accel + accel_g * interp(CS.out.vEgo, BRAKE_PITCH_FACTOR_BP, BRAKE_PITCH_FACTOR_V)
