@@ -134,7 +134,7 @@ class CarState(CarStateBase):
       # openpilot controls nonAdaptive when not pcmCruise
       if self.CP.pcmCruise:
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
-    if self.CP.flags & GMFlags.CC_LONG:
+    if self.CP.flags & GMFlags.CC_LONG.value:
       ret.cruiseState.speed = (pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"]) * CV.KPH_TO_MS
 
     return ret
@@ -245,7 +245,7 @@ class CarState(CarStateBase):
         ("EVDriveMode", 0),
       ]
 
-    if CP.flags & GMFlags.CC_LONG:
+    if CP.flags & GMFlags.CC_LONG.value:
       signals.append(("CruiseSetSpeed", "ECMCruiseControl"))
       checks.append(("ECMCruiseControl", 10))
 
