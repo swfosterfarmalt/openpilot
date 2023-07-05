@@ -246,7 +246,7 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if ret.enableGasInterceptor:
-      ret.flags |= GMFlags.PEDAL_LONG
+      ret.flags |= GMFlags.PEDAL_LONG.value
       ret.minEnableSpeed = -1
       ret.pcmCruise = False
       ret.openpilotLongitudinalControl = True
@@ -262,7 +262,7 @@ class CarInterface(CarInterfaceBase):
       ret.stoppingControl = True
 
     elif candidate in CC_ONLY_CAR:
-      ret.flags |= GMFlags.CC_LONG
+      ret.flags |= GMFlags.CC_LONG.value
       ret.radarUnavailable = True
       ret.experimentalLongitudinalAvailable = False
       ret.minEnableSpeed = 24 * CV.MPH_TO_MS
