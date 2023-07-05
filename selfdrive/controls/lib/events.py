@@ -321,8 +321,6 @@ def wrong_car_mode_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
   text = "Enable Adaptive Cruise to Engage"
   if CP.carName == "honda":
     text = "Enable Main Switch to Engage"
-  elif CP.carName == "gm" and CP.enableGasInterceptor:
-    text = "Turn CC Off To Use Pedal Interceptor"
   return NoEntryAlert(text)
 
 
