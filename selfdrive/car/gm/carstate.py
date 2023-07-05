@@ -122,8 +122,6 @@ class CarState(CarStateBase):
     ret.espDisabled = pt_cp.vl["ESPStatus"]["TractionControlOn"] != 1
     ret.accFaulted = (pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.FAULTED or
                       pt_cp.vl["EBCMFrictionBrakeStatus"]["FrictionBrakeUnavailable"] == 1)
-    if self.CP.carFingerprint in CC_ONLY_CAR:
-      ret.accFaulted = False
     self.pcm_acc_status = pt_cp.vl["AcceleratorPedal2"]["CruiseState"]
 
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
@@ -134,8 +132,10 @@ class CarState(CarStateBase):
       # openpilot controls nonAdaptive when not pcmCruise
       if self.CP.pcmCruise:
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
-    if self.CP.flags & GMFlags.CC_LONG.value:
-      ret.cruiseState.speed = (pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"]) * CV.KPH_TO_MS
+    if self.CP.carFingerprint in CC_ONLY_CAR:
+      ret.accFaulted = False
+      ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
+      ret.cruiseState.enabled = pt_cp.vl["ECMCruiseControl"]["CruiseActive"] != 0
 
     return ret
 
@@ -245,9 +245,14 @@ class CarState(CarStateBase):
         ("EVDriveMode", 0),
       ]
 
-    if CP.flags & GMFlags.CC_LONG.value:
-      signals.append(("CruiseSetSpeed", "ECMCruiseControl"))
-      checks.append(("ECMCruiseControl", 10))
+    if CP.carFingerprint in CC_ONLY_CAR:
+      signals += [
+        ("CruiseSetSpeed", "ECMCruiseControl"),
+        ("CruiseActive", "ECMCruiseControl"),
+      ]
+      checks += [
+        ("ECMCruiseControl", 10),
+      ]
 
     if CP.enableGasInterceptor:
       signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR"))
