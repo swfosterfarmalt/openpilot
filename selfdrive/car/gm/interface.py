@@ -309,10 +309,10 @@ class CarInterface(CarInterfaceBase):
     if 0.05 < ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
 
-    if (ret.flags & GMFlags.CC_LONG) and ret.vEgo < self.CP.minEnableSpeed:
+    if (ret.flags & GMFlags.CC_LONG.value) and ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.speedTooLow)
 
-    if (ret.flags & GMFlags.PEDAL_LONG) and self.CP.transmissionType == TransmissionType.direct and not self.CS.single_pedal_mode:
+    if (ret.flags & GMFlags.PEDAL_LONG.value) and self.CP.transmissionType == TransmissionType.direct and not self.CS.single_pedal_mode:
       events.add(EventName.pedalInterceptorNoBrake)
 
     ret.events = events.to_msg()

@@ -128,11 +128,11 @@ class CarController:
         idx = (self.frame // 4) % 4
 
         at_full_stop = CC.longActive and CS.out.standstill
-        if self.CP.flags & GMFlags.CC_LONG:
+        if self.CP.flags & GMFlags.CC_LONG.value:
           if CC.longActive:
             # Using extend instead of append since the message is only sent intermittently
             can_sends.extend(gmcan.create_gm_cc_spam_command(self.packer_pt, self, CS, actuators))
-        elif self.CP.flags & GMFlags.PEDAL_LONG:
+        elif self.CP.flags & GMFlags.PEDAL_LONG.value:
           can_sends.append(gmcan.create_gm_pedal_interceptor_command(self.packer_pt, CS, CC, actuators, idx))
         else:
           # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
@@ -176,7 +176,7 @@ class CarController:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
 
       # TODO: integrate this with the code block below?
-      if (self.CP.flags & GMFlags.PEDAL_LONG) and CS.out.cruiseState.enabled:
+      if (self.CP.flags & GMFlags.PEDAL_LONG.value) and CS.out.cruiseState.enabled:
         if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
           self.last_button_frame = self.frame
           can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, (CS.buttons_counter + 1) % 4, CruiseButtons.CANCEL))
