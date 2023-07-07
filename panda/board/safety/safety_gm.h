@@ -30,6 +30,7 @@ const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
 // panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
 // If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
 const int GM_GAS_INTERCEPTOR_THRESHOLD = 506; // (610 + 306.25) / 2 ratio between offset and gain from dbc file
+const int GM_ASCM_GAS_INTERCEPTOR_THRESHOLD = 500; // (346 + 655) / 2
 #define GM_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2U) // avg between 2 tracks
 
 const CanMsg GM_ASCM_TX_MSGS[] = {{384, 0, 4}, {1033, 0, 7}, {1034, 0, 7}, {715, 0, 8}, {880, 0, 6}, {512, 0, 6},  // pt bus
@@ -76,6 +77,7 @@ bool gm_cam_long = false;
 bool gm_pcm_cruise = false;
 bool gm_cc_long = false;
 bool gm_skip_relay_check = false;
+bool gm_force_ascm = false;
 
 static int gm_rx_hook(CANPacket_t *to_push) {
 
@@ -153,7 +155,11 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     if (addr == 513) {
       gas_interceptor_detected = 1;
       int gas_interceptor = GM_GET_INTERCEPTOR(to_push);
-      gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
+      if (gm_hw == GM_ASCM || gm_force_ascm) {
+        gas_pressed = gas_interceptor > GM_ASCM_GAS_INTERCEPTOR_THRESHOLD;
+      } else {
+        gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
+      }
       gas_interceptor_prev = gas_interceptor;
     }
 
@@ -281,7 +287,9 @@ static int gm_fwd_hook(int bus_num, int addr) {
 static const addr_checks* gm_init(uint16_t param) {
   gm_hw = GET_FLAG(param, GM_PARAM_HW_CAM) ? GM_CAM : GM_ASCM;
 
-  if (gm_hw == GM_ASCM || GET_FLAG(param, GM_PARAM_HW_ASCM_LONG)) {
+  gm_force_ascm = GET_FLAG(param, GM_PARAM_HW_ASCM_LONG);
+
+  if (gm_hw == GM_ASCM || gm_force_ascm) {
     gm_long_limits = &GM_ASCM_LONG_LIMITS;
   } else if (gm_hw == GM_CAM) {
     gm_long_limits = &GM_CAM_LONG_LIMITS;
