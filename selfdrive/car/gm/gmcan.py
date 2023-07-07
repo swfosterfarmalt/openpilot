@@ -120,7 +120,6 @@ def create_acc_dashboard_command(packer, bus, enabled, personality, target_speed
     gap = 3
   else:
     gap = 3
-  print(f'gap: {gap}, personality: {personality}')
 
   values = {
     "ACCAlwaysOne": 1,

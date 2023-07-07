@@ -1,10 +1,8 @@
 import copy
 
-from cereal import car, log
+from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
-from common.params import Params
-from common.params_pyx import put_nonblocking, put_bool_nonblocking
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
@@ -20,7 +18,6 @@ STANDSTILL_THRESHOLD = 10 * 0.0311 * CV.KPH_TO_MS
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.params = Params()
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
@@ -34,28 +31,12 @@ class CarState(CarStateBase):
 
     self.single_pedal_mode = False
     self.pedal_steady = 0.
-
-    # TODO: find a better place for this
-    try:
-      self.longitudinal_personality = int(self.params.get("LongitudinalPersonality", encoding="utf-8"))
-    except (ValueError, TypeError):
-      self.longitudinal_personality = log.LongitudinalPersonality.standard
     self.distance_button_pressed = False
-    self.distance_button_pressed_timer = 0
 
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
 
-    # TODO: find a better place for this
-    self.distance_button_pressed_timer = self.distance_button_pressed_timer + 1 if self.distance_button_pressed else 0
     self.distance_button_pressed = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"] != 0
-    if self.distance_button_pressed_timer == CRUISE_LONG_PRESS:
-      e_mode = self.params.get_bool("ExperimentalMode")
-      put_bool_nonblocking("ExperimentalMode", not e_mode)
-    elif not self.distance_button_pressed and self.distance_button_pressed_timer > 0:  # falling edge
-      self.longitudinal_personality = (self.longitudinal_personality - 1) % 3
-      put_nonblocking("LongitudinalPersonality", str(self.longitudinal_personality))
-
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = pt_cp.vl["ASCMSteeringButton"]["ACCButtons"]
     self.buttons_counter = pt_cp.vl["ASCMSteeringButton"]["RollingCounter"]
