@@ -288,7 +288,7 @@ class CarInterface(CarInterfaceBase):
     # Exception for flashed cars, or cars whose camera was removed
     if ret.networkLocation == NetworkLocation.fwdCamera and CAM_MSG not in fingerprint[CanBus.CAMERA]:
       ret.flags |= GMFlags.NO_CAMERA.value
-      # TODO: Panda flag
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_NO_CAMERA
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
