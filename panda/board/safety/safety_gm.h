@@ -133,10 +133,16 @@ static int gm_rx_hook(CANPacket_t *to_push) {
       }
 
       // enter controls on rising edge of ACC, exit controls when ACC off
-      if (gm_pcm_cruise) {
+      if (gm_pcm_cruise && !gm_cc_long) {
         bool cruise_engaged = (GET_BYTE(to_push, 1) >> 5) != 0U;
         pcm_cruise_check(cruise_engaged);
       }
+    }
+
+    // Cruise check for CC only cars
+    if ((addr == 977) && gm_cc_long) {
+      bool cruise_engaged = (GET_BYTE(to_push, 4) >> 7) != 0U;
+      pcm_cruise_check(cruise_engaged);
     }
 
     if (addr == 189) {
@@ -146,7 +152,6 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     // Pedal Interceptor
     if (addr == 513) {
       gas_interceptor_detected = 1;
-      gm_pcm_cruise = false;
       int gas_interceptor = GM_GET_INTERCEPTOR(to_push);
       gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
       gas_interceptor_prev = gas_interceptor;
@@ -228,12 +233,14 @@ static int gm_tx_hook(CANPacket_t *to_send) {
   }
 
   // BUTTONS: used for resume spamming and cruise cancellation with stock longitudinal
-  if ((addr == 481) && (gm_pcm_cruise || (gm_hw == GM_CAM))) {
+  if ((addr == 481) && (gm_pcm_cruise || gas_interceptor_detected)) {
     int button = (GET_BYTE(to_send, 5) >> 4) & 0x7U;
 
-    bool allowed_btn = (button == GM_BTN_CANCEL) && (cruise_engaged_prev || gas_interceptor_detected);
+    bool allowed_btn = (button == GM_BTN_CANCEL) && cruise_engaged_prev;
     // For standard CC, allow spamming of SET / RESUME
-    allowed_btn |= cruise_engaged_prev && (gm_hw == GM_CAM) && (button == GM_BTN_SET || button == GM_BTN_RESUME || button == GM_BTN_UNPRESS);
+    if (gm_cc_long) {
+      allowed_btn |= cruise_engaged_prev && (button == GM_BTN_SET || button == GM_BTN_RESUME || button == GM_BTN_UNPRESS);
+    }
 
     if (!allowed_btn) {
       tx = 0;
@@ -283,8 +290,7 @@ static const addr_checks* gm_init(uint16_t param) {
 
   gm_cc_long = GET_FLAG(param, GM_PARAM_CC_LONG);
   gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG) && !gm_cc_long;
-  gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long && !gm_cc_long;
-  gm_skip_relay_check = GET_FLAG(param, GM_PARAM_NO_CAMERA);
+  gm_pcm_cruise = (gm_hw == GM_CAM) && (!gm_cam_long || gm_cc_long);
   return &gm_rx_checks;
 }
 
