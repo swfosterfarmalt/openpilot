@@ -19,6 +19,10 @@ NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
+PEDAL_MSG = 0x201
+CAM_MSG = 0x320  # AEBCmd
+                 # TODO: Is this always linked to camera presence?
+
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
@@ -53,7 +57,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
-    ret.enableGasInterceptor = 0x201 in fingerprint[0]
+    ret.enableGasInterceptor = PEDAL_MSG in fingerprint[0]
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -280,6 +284,11 @@ class CarInterface(CarInterfaceBase):
       # FIXME
       # ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_CC_LONG
       ret.pcmCruise = False
+
+    # Exception for flashed cars, or cars whose camera was removed
+    if ret.networkLocation == NetworkLocation.fwdCamera and CAM_MSG not in fingerprint[CanBus.CAMERA]:
+      ret.flags |= GMFlags.NO_CAMERA.value
+      # TODO: Panda flag
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
