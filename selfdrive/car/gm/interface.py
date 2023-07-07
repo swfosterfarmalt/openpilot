@@ -204,6 +204,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+      if ret.enableGasInterceptor:
+        # ACC Bolts use pedal for full longitudinal control, not just sng
+        ret.flags |= GMFlags.PEDAL_LONG.value
+
     elif candidate == CAR.SILVERADO:
       ret.mass = 2200. + STD_CARGO_KG
       ret.wheelbase = 3.75
@@ -252,7 +256,6 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if ret.enableGasInterceptor:
-      ret.flags |= GMFlags.PEDAL_LONG.value
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
@@ -263,6 +266,7 @@ class CarInterface(CarInterfaceBase):
       ret.autoResumeSng = True
 
       if candidate in CC_ONLY_CAR:
+        ret.flags |= GMFlags.PEDAL_LONG.value
         # Note: Low speed, stop and go not tested. Should be fairly smooth on highway
         ret.longitudinalTuning.kpBP = [5., 35.]
         ret.longitudinalTuning.kpV = [0.35, 0.5]
