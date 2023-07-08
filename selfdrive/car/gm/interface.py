@@ -277,7 +277,7 @@ class CarInterface(CarInterfaceBase):
       else:  # Pedal used for SNG, ACC for longitudinal control otherwise
         ret.startingState = True
         ret.vEgoStopping = 0.25
-        ret.vEgoStarting = 0.25
+        ret.vEgoStarting = 1.0  # pedal transition speed
 
     elif candidate in CC_ONLY_CAR:
       ret.flags |= GMFlags.CC_LONG.value
