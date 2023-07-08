@@ -43,6 +43,7 @@ class CarController:
     self.last_button_frame = 0
     self.cancel_counter = 0
     self.pedal_steady = 0.
+    self.sng_counter = 0
 
     self.lka_steering_cmd_counter = 0
     self.lka_icon_status_last = (False, False)
@@ -122,14 +123,18 @@ class CarController:
           # ASCM sends max regen when not enabled
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
+          self.sng_counter = 0
         elif actuators.longControlState == LongCtrlState.starting:
-          interceptor_gas_cmd = self.params.SNG_INTERCEPTOR_GAS
+          interceptor_gas_cmd = interp(self.sng_counter, [0, self.params.SNG_TIME], [0., self.params.SNG_INTERCEPTOR_GAS])
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
+          self.sng_counter += 1
         elif at_full_stop:
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = self.params.MAX_BRAKE
+          self.sng_counter = 0
         else:
+          self.sng_counter = 0
           # Normal operation
           brake_accel = actuators.accel + accel_g * interp(CS.out.vEgo, BRAKE_PITCH_FACTOR_BP, BRAKE_PITCH_FACTOR_V)
           if self.CP.carFingerprint in EV_CAR:
