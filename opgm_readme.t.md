@@ -1,3 +1,4 @@
+
 # OPGM openpilot fork
 
 This is a fork of [openpilot](https://github.com/commaai/openpilot/), an open source driver assistance system. Please
@@ -14,9 +15,10 @@ master branch. The latest build was done on {{time.Now.Format "January 02, 2006"
 * Support for GM vehicles with LKAS but no ACC
 * Pedal interceptor support for longitudinal control
   * Also provides full regen on GM Bolt EV/EUV with ACC (*in process of upstreaming*)
+  * Also provides stop-and-go (sng) on vehicles with stock ACC
 * CC long, aka "[redneck ACC](https://www.youtube.com/watch?v=41wZ1EAmf94)" to automatically adjust nonadaptive cruise
-control
-  * > CC long is not a substitute for ACC. It is incapable of reducing the vehicle speed below 24mph.
+control, credit jshuler
+  * > CC long is not a substitute for ACC. It is incapable of controlling the vehicle speed below 24mph.
 * Neural network steering control, credit twilsonco
 * Always On Longitudinal (AOL), credit pfeiferj
 
@@ -79,11 +81,9 @@ To be sure that your car is completely powered down:
 3. Wait 5 minutes
 
 ## Known issues
-* CC long may cause a controls mismatch error if driving under 24mph.
-* CC long does not work on 2022+ Bolt EV/EUV.
-* AOL may be broken on pedal interceptor vehicles.
 * The car must be restarted after enabling AOL in the toggles.
 * Curve hugging and laneline crossing are known issues of upstream openpilot.
+* Chevrolet Volt without ACC may currently be broken.
 
 ## Discussion
 Come join us on the OPGM channel in the [openpilot community discord](https://discord.gg/KGWEdwSnCU)!
