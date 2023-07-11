@@ -21,6 +21,8 @@ control, credit jshuler
   * > CC long is not a substitute for ACC. It is incapable of controlling the vehicle speed below 24mph.
 * Neural network steering control, credit twilsonco
 * Always On Longitudinal (AOL), credit pfeiferj
+* Gap adjust button to adjust driving personality
+  * Long press to toggle between chill and experimental modes
 
 ## Supported vehicles list
 OPGM is capable of supportng vehicles on the Global A architecture that have factory LKAS. Currently supported vehicles
