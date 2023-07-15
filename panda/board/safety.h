@@ -256,6 +256,11 @@ void generic_rx_checks(bool stock_ecu_detected) {
   if (gas_pressed && !gas_pressed_prev && !(alternative_experience & ALT_EXP_DISABLE_DISENGAGE_ON_GAS)) {
     controls_allowed = 0;
   }
+  // PFEIFER - AOL {{
+  if (gas_pressed && !gas_pressed_prev && !(alternative_experience & ALT_EXP_ENABLE_ALWAYS_ON_LATERAL)) {
+    lateral_controls_allowed = 0;
+  }
+  // }} PFEIFER - AOL
   gas_pressed_prev = gas_pressed;
 
   // exit controls on rising edge of brake press
@@ -335,6 +340,9 @@ int set_safety_hooks(uint16_t mode, uint16_t param) {
   vehicle_moving = false;
   acc_main_on = false;
   cruise_button_prev = 0;
+  // PFEIFER - AOL {{
+  main_button_prev = 0;
+  // }} PFEIFER - AOL
   desired_torque_last = 0;
   rt_torque_last = 0;
   ts_angle_last = 0;
