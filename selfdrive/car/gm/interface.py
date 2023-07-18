@@ -120,6 +120,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     if candidate in (CAR.VOLT, CAR.VOLT_CC):
+      ret.nnffFingerprint = CAR.VOLT
       ret.minEnableSpeed = -1
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
@@ -195,6 +196,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.0
 
     elif candidate in (CAR.BOLT_EUV, CAR.BOLT_CC):
+      ret.nnffFingerprint = CAR.BOLT_EUV
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
@@ -221,6 +223,7 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate in (CAR.EQUINOX, CAR.EQUINOX_CC):
+      ret.nnffFingerprint = CAR.EQUINOX
       ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.72
       ret.steerRatio = 14.4
@@ -237,6 +240,7 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate in (CAR.SUBURBAN, CAR.SUBURBAN_CC):
+      ret.nnffFingerprint = CAR.SUBURBAN
       ret.mass = 2731. + STD_CARGO_KG
       ret.wheelbase = 3.302
       ret.steerRatio = 17.3 # COPIED FROM SILVERADO
