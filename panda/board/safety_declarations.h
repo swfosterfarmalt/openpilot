@@ -185,6 +185,7 @@ void safety_tick(const addr_checks *addr_checks);
 
 // This can be set by the safety hooks
 bool controls_allowed = false;
+bool lateral_controls_allowed = false;
 bool relay_malfunction = false;
 bool gas_interceptor_detected = false;
 int gas_interceptor_prev = 0;
@@ -200,7 +201,6 @@ bool vehicle_moving = false;
 bool acc_main_on = false;  // referred to as "ACC off" in ISO 15622:2018
 int cruise_button_prev = 0;
 // PFEIFER - AOL {{
-bool lateral_controls_allowed = false;
 int main_button_prev = 0;
 bool set_me_prev = false;
 // }} PFEIFER - AOL

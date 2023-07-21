@@ -71,6 +71,10 @@ bool get_cruise_engaged_prev(void){
   return cruise_engaged_prev;
 }
 
+void set_cruise_engaged_prev(bool engaged){
+  cruise_engaged_prev = engaged;
+}
+
 bool get_vehicle_moving(void){
   return vehicle_moving;
 }
@@ -193,4 +197,3 @@ void reset_gmlan_switch_timeout(void){
 
 void gmlan_switch_init(int timeout_enable){
 }
-
