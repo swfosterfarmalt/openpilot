@@ -20,7 +20,8 @@ master branch. The latest build was done on {{time.Now.Format "January 02, 2006"
 control, credit jshuler
   * > CC long is not a substitute for ACC. It is incapable of controlling the vehicle speed below 24mph.
 * Neural network steering control, credit twilsonco
-* Always On Longitudinal (AOL), credit pfeiferj
+* Always On Lateral (AOL), credit pfeiferj
+  * i.e. openpilot keeps steering independently of longitudinal control
 * Gap adjust button to adjust driving personality
   * Long press to toggle between chill and experimental modes
 
