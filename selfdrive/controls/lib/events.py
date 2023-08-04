@@ -238,7 +238,7 @@ def below_steer_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.S
     f"Steer Unavailable Below {get_display_speed(CP.minSteerSpeed, metric)}",
     "",
     AlertStatus.userPrompt, AlertSize.small,
-    Priority.LOW, VisualAlert.steerRequired, AudibleAlert.prompt, 0.4)
+    Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, 0.4)
 
 
 def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
@@ -957,16 +957,16 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.PERMANENT: Alert(
       "e2e NN torque controller loaded successfully",
       "",
-      AlertStatus.userPrompt, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 6.0),
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 2.0),
   },
 
   EventName.torqueNNFFNotLoaded: {
-  ET.PERMANENT: Alert(
-    "e2e NN torque controller not loaded.",
-    "go donate logs to twilsonco to get loaded!",
-    AlertStatus.userPrompt, AlertSize.mid,
-    Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 6.0),
+    ET.PERMANENT: Alert(
+      "e2e NN torque controller not loaded.",
+      "go donate logs to twilsonco to get loaded!",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 6.0),
   },
 
   EventName.pedalInterceptorNoBrake: {
