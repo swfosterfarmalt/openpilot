@@ -119,6 +119,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     torqueNNFFLoadSuccess @118;
     torqueNNFFNotLoaded @119;
 
+    pedalInterceptorNoBrake @120;
+
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
     radarCommIssueDEPRECATED @67;
