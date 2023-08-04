@@ -222,5 +222,40 @@ class TestGmCameraLongitudinalSafety(GmLongitudinalBase, TestGmCameraSafetyBase)
     self.safety.init_tests()
 
 
+##### OPGM TESTS #####
+
+def interceptor_msg(gas, addr):
+  to_send = common.make_msg(0, addr, 6)
+  to_send[0].data[0] = (gas & 0xFF00) >> 8
+  to_send[0].data[1] = gas & 0xFF
+  to_send[0].data[2] = (gas & 0xFF00) >> 8
+  to_send[0].data[3] = gas & 0xFF
+  return to_send
+
+
+class TestGmInterceptorSafety(TestGmCameraSafety, common.InterceptorSafetyTest):
+  INTERCEPTOR_THRESHOLD = 506
+
+  def setUp(self):
+    self.packer = CANPackerPanda("gm_global_a_powertrain_generated")
+    self.packer_chassis = CANPackerPanda("gm_global_a_chassis")
+    self.safety = libpanda_py.libpanda
+    self.safety.set_safety_hooks(Panda.SAFETY_GM, Panda.FLAG_GM_HW_CAM | Panda.FLAG_GM_NO_ACC)
+    self.safety.init_tests()
+
+  def _pcm_status_msg(self, enable):
+    values = {"CruiseActive": enable}
+    return self.packer.make_can_msg_panda("ECMCruiseControl", 0, values)
+
+  def test_fwd_hook(self):
+    pass
+
+  def _interceptor_gas_cmd(self, gas):
+    return interceptor_msg(gas, 0x200)
+
+  def _interceptor_user_gas(self, gas):
+    return interceptor_msg(gas, 0x201)
+
+
 if __name__ == "__main__":
   unittest.main()
