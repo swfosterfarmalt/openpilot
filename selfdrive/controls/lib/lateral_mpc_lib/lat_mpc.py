@@ -171,6 +171,8 @@ class LateralMpc():
     p_cp = np.copy(p)
     self.solver.constraints_set(0, "lbx", x0_cp)
     self.solver.constraints_set(0, "ubx", x0_cp)
+    self.solver.constraints_set(0, "lbu", -3.0)
+    self.solver.constraints_set(0, "ubu", 3.0)
     self.yref[:,0] = y_pts
     v_ego = p_cp[0, 0]
     # rotation_radius = p_cp[1]
