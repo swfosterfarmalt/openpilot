@@ -305,6 +305,12 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = True
       ret.pcmCruise = False
 
+      ret.longitudinalTuning.deadzoneBP = [0.]
+      ret.longitudinalTuning.deadzoneV = [0.56]  # == 2 km/h/s, 1.25 mph/s
+      ret.stoppingDecelRate = 2.24  # == 5 mph/s, may be faster on euro cars
+      ret.longitudinalActuatorDelayLowerBound = 0.2  # TODO: measure this
+      ret.longitudinalActuatorDelayUpperBound = 0.8
+
     if candidate in CC_ONLY_CAR:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_NO_ACC
 
