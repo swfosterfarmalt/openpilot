@@ -206,6 +206,7 @@ def create_gm_cc_spam_command(packer, controller, CS, actuators):
   if speedSetPoint == CS.CP.minEnableSpeed and accel < -1:
     cruiseBtn = CruiseButtons.CANCEL
     controller.apply_speed = 0
+    rate = RATE_DOWN_MAX
   elif accel < 0:
     cruiseBtn = CruiseButtons.DECEL_SET
     rate = max(-1 / accel, RATE_DOWN_MAX)
@@ -216,6 +217,7 @@ def create_gm_cc_spam_command(packer, controller, CS, actuators):
     controller.apply_speed = speedSetPoint + 1
   else:
     controller.apply_speed = speedSetPoint
+    rate = float('inf')
 
   # Check rlogs closely - our message shouldn't show up on the pt bus for us
   # Or bus 2, since we're forwarding... but I think it does
