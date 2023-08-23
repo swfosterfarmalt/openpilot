@@ -311,6 +311,12 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalActuatorDelayLowerBound = 0.2  # TODO: measure this
       ret.longitudinalActuatorDelayUpperBound = 0.8
 
+      ret.longitudinalTuning.kpBP = [10.7, 10.8, 35.]  # 10.7 m/s == 24 mph
+      ret.longitudinalTuning.kpV = [0., 1.0, 1.0]  # set lower end to 0 since we can't drive below that speed
+      ret.longitudinalTuning.kiBP = [0.]
+      ret.longitudinalTuning.kiV = [0.1]
+
+
     if candidate in CC_ONLY_CAR:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_NO_ACC
 
