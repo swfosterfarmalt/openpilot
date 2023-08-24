@@ -1,5 +1,6 @@
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.numpy_fast import interp, clip
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
@@ -41,6 +42,27 @@ class CarController:
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint]['chassis'])
+
+    self.accel = FirstOrderFilter(0., 0.09 * 4, DT_CTRL * 4)  # runs at 25 Hz
+    self.pitch = FirstOrderFilter(0., 0.09 * 4, DT_CTRL * 4)  # runs at 25 Hz
+    self.v_ego = FirstOrderFilter(0., 0.09 * 4, DT_CTRL * 4)  # runs at 25 Hz
+
+  def get_gas_brake(self, accel, pitch, v_ego):
+    self.accel.update(accel)
+    self.pitch.update(pitch)
+    self.v_ego.update(v_ego)
+
+    gas_coeffs = [461.8310157925314, 28.32123051342731, 7.566991793387531, 584.8379823639028]
+    brake_coeffs = [-132.0718330745687, 5.288000104598623, -2.29536143292798, -106.54644860234978]
+    x = [self.accel.x, self.pitch.x, self.v_ego.x, 1.]
+    gas = sum(i*j for i, j in zip(gas_coeffs, x))
+    brake = sum(i*j for i, j in zip(brake_coeffs, x))
+    if gas > 0.:
+      brake = 0.
+    gas = clip(gas + self.params.INACTIVE_REGEN, self.params.INACTIVE_REGEN, self.params.MAX_GAS)
+    brake = clip(brake, 0, self.params.MAX_BRAKE)
+    gas, brake = int(gas), int(brake)
+    return gas, brake
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -105,13 +127,9 @@ class CarController:
           self.apply_brake = int(min(-100 * self.CP.stopAccel, self.params.MAX_BRAKE))
         else:
           # Normal operation
-          if self.CP.carFingerprint in EV_CAR:
-            self.params.update_ev_gas_brake_threshold(CS.out.vEgo)
-            self.apply_gas = int(round(interp(actuators.accel, self.params.EV_GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-            self.apply_brake = int(round(interp(actuators.accel, self.params.EV_BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
-          else:
-            self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-            self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
+          try: pitch = CC.orientationNED[1]
+          except IndexError: pitch = 0.
+          self.apply_gas, self.apply_brake = self.get_gas_brake(actuators.accel, pitch, CS.out.vEgo)
           # Don't allow any gas above inactive regen while stopping
           # FIXME: brakes aren't applied immediately when enabling at a stop
           if stopping:
