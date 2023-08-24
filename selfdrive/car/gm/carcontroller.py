@@ -52,8 +52,11 @@ class CarController:
     self.pitch.update(pitch)
     self.v_ego.update(v_ego)
 
-    gas_coeffs = [461.8310157925314, 28.32123051342731, 7.566991793387531, 584.8379823639028]
+    gas_coeffs = [469.1213723381809, 31.184599072082662, 7.68156425814758, 581.1139020654966]
     brake_coeffs = [-132.0718330745687, 5.288000104598623, -2.29536143292798, -106.54644860234978]
+    # todo: add log v_ego term with these coeffs
+    # gas_coeffs = [445.3128706740983, 4.343582892472733, -7.594724749584144, 263.236028406746, 126.44258573355492]
+    # brake_coeffs = [-132.0718330745687, 5.288000104598623, -2.29536143292798, 0, -106.54644860234978]
     x = [self.accel.x, self.pitch.x, self.v_ego.x, 1.]
     gas = sum(i*j for i, j in zip(gas_coeffs, x))
     brake = sum(i*j for i, j in zip(brake_coeffs, x))
