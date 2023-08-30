@@ -6,7 +6,8 @@ from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits, create_gas_interceptor_command
 from openpilot.selfdrive.car.gm import gmcan
-from openpilot.selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, GMFlags, CC_ONLY_CAR, EV_CAR
+from openpilot.selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons, GMFlags, CC_ONLY_CAR, \
+  EV_CAR, CAR
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 NetworkLocation = car.CarParams.NetworkLocation
@@ -52,11 +53,19 @@ class CarController:
     self.pitch.update(pitch)
     self.v_ego.update(v_ego)
 
-    gas_coeffs = [469.1213723381809, 31.184599072082662, 7.68156425814758, 581.1139020654966]
-    brake_coeffs = [-132.0718330745687, 5.288000104598623, -2.29536143292798, -106.54644860234978]
-    # todo: add log v_ego term with these coeffs
-    # gas_coeffs = [445.3128706740983, 4.343582892472733, -7.594724749584144, 263.236028406746, 126.44258573355492]
-    # brake_coeffs = [-132.0718330745687, 5.288000104598623, -2.29536143292798, 0, -106.54644860234978]
+    if self.CP.carFingerprint in (CAR.BOLT_EUV, CAR.BOLT_CC):
+      gas_coeffs = [0.179992, 0.004335, 0.068058, 0.273943]
+      brake_coeffs = [0] * 4
+    elif self.CP.carFingerprint in (CAR.VOLT, CAR.VOLT_CC):
+      gas_coeffs = [469.1213723381809, 31.184599072082662, 7.68156425814758, 581.1139020654966]
+      brake_coeffs = [-132.0718330745687, 5.288000104598623, -2.29536143292798, -106.54644860234978]
+      # todo: add log v_ego term with these coeffs
+      # gas_coeffs = [445.3128706740983, 4.343582892472733, -7.594724749584144, 263.236028406746, 126.44258573355492]
+      # brake_coeffs = [-132.0718330745687, 5.288000104598623, -2.29536143292798, 0, -106.54644860234978]
+    else:
+      gas_coeffs = [0] * 4
+      brake_coeffs = [0] * 4
+
     x = [self.accel.x, self.pitch.x, self.v_ego.x, 1.]
     gas = sum(i*j for i, j in zip(gas_coeffs, x))
     brake = sum(i*j for i, j in zip(brake_coeffs, x))
@@ -130,7 +139,7 @@ class CarController:
           self.apply_brake = int(min(-100 * self.CP.stopAccel, self.params.MAX_BRAKE))
         else:
           # Normal operation
-          try: pitch = CC.orientationNED[1]
+          try: pitch = CC.calibratedOrientationNED[1]
           except IndexError: pitch = 0.
           self.apply_gas, self.apply_brake = self.get_gas_brake(actuators.accel, pitch, CS.out.vEgo)
           # Don't allow any gas above inactive regen while stopping
@@ -139,7 +148,7 @@ class CarController:
             self.apply_gas = self.params.INACTIVE_REGEN
           if self.CP.carFingerprint in CC_ONLY_CAR:
             # gas interceptor only used for full long control on cars without ACC
-            interceptor_gas_cmd = clip((self.apply_gas - self.params.INACTIVE_REGEN) / (self.params.MAX_GAS - self.params.INACTIVE_REGEN), 0., 1.)
+            interceptor_gas_cmd = clip(self.apply_gas, 0., 1.)
 
         if CC.cruiseControl.resume and actuators.longControlState == LongCtrlState.starting:
           interceptor_gas_cmd = self.params.SNG_INTERCEPTOR_GAS
