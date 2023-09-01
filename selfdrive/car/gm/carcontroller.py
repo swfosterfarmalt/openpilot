@@ -1,9 +1,9 @@
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import interp
+from openpilot.common.numpy_fast import interp, clip
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
-from openpilot.selfdrive.car import apply_driver_steer_torque_limits
+from openpilot.selfdrive.car import apply_driver_steer_torque_limits, create_gas_interceptor_command
 from openpilot.selfdrive.car.gm import gmcan
 from openpilot.selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 
@@ -22,7 +22,8 @@ class CarController:
     self.CP = CP
     self.start_time = 0.
     self.apply_steer_last = 0
-    self.apply_gas = 0
+    self.pcm_gas = 0
+    self.interceptor_gas = 0
     self.apply_brake = 0
     self.frame = 0
     self.last_steer_frame = 0
@@ -88,17 +89,23 @@ class CarController:
         stopping = actuators.longControlState == LongCtrlState.stopping
         if not CC.longActive:
           # ASCM sends max regen when not enabled
-          self.apply_gas = self.params.INACTIVE_REGEN
+          self.pcm_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         else:
-          self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
+          self.pcm_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
           self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
           # Don't allow any gas above inactive regen while stopping
           # FIXME: brakes aren't applied immediately when enabling at a stop
           if stopping:
-            self.apply_gas = self.params.INACTIVE_REGEN
+            self.pcm_gas = self.params.INACTIVE_REGEN
 
         idx = (self.frame // 4) % 4
+
+        if self.CP.enableGasInterceptor:
+          # TODO: need to make this align better with regen thresholds
+          self.interceptor_gas = clip((self.pcm_gas - self.params.INACTIVE_REGEN) / (self.params.MAX_GAS - self.params.INACTIVE_REGEN), 0., 1.)
+          self.pcm_gas = self.params.INACTIVE_REGEN
+          can_sends.append(create_gas_interceptor_command(self.packer_pt, self.interceptor_gas, idx))
 
         at_full_stop = CC.longActive and CS.out.standstill
         near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
@@ -110,7 +117,7 @@ class CarController:
           friction_brake_bus = CanBus.POWERTRAIN
 
         # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
-        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
+        can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.pcm_gas, idx, CC.enabled, at_full_stop))
         can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake,
                                                              idx, CC.enabled, near_stop, at_full_stop, self.CP))
 
@@ -172,7 +179,7 @@ class CarController:
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
     new_actuators.steerOutputCan = self.apply_steer_last
-    new_actuators.gas = self.apply_gas
+    new_actuators.gas = self.pcm_gas if not self.CP.enableGasInterceptor else self.interceptor_gas
     new_actuators.brake = self.apply_brake
 
     self.frame += 1
