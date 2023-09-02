@@ -228,6 +228,8 @@ class CarInterface(CarInterfaceBase):
         ret.longitudinalTuning.kf = 0.15
         ret.stoppingDecelRate = 0.8
         ret.openpilotLongitudinalControl = True
+        ret.pcmCruise = False
+        ret.minEnableSpeed = -1.
 
     elif candidate == CAR.SILVERADO:
       ret.mass = 2450.
