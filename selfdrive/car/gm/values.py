@@ -42,9 +42,13 @@ class CarControllerParams:
       self.MAX_GAS = 3400
       self.MAX_ACC_REGEN = 1514
       self.INACTIVE_REGEN = 1554
-      # Camera ACC vehicles have no regen while enabled.
-      # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
-      max_regen_acceleration = 0.
+      if CP.enableGasInterceptor and CP.carFingerprint == CAR.BOLT_EUV:
+        # Observed regen accel varies between -1.5 and -2.2 m/s/s
+        max_regen_acceleration = -2.0
+      else:
+        # Camera ACC vehicles have no regen while ACC enabled.
+        # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
+        max_regen_acceleration = 0.
 
     else:
       self.MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
