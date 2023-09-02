@@ -165,6 +165,9 @@ class CarState(CarStateBase):
         ("EVDriveMode", 1),
       ]
 
+    if CP.enableGasInterceptor:
+      messages.append(("GAS_SENSOR", 50))
+
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.POWERTRAIN)
 
   @staticmethod
