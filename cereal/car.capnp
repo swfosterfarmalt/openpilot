@@ -484,6 +484,7 @@ struct CarParams {
   steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
   longitudinalActuatorDelayLowerBound @61 :Float32; # Gas/Brake actuator delay in seconds, lower bound
   longitudinalActuatorDelayUpperBound @58 :Float32; # Gas/Brake actuator delay in seconds, upper bound
+  gasCommandOffset @73 :Float32; # Minimum gas command
   openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
   carVin @38 :Text; # VIN number queried during fingerprinting
   dashcamOnly @41: Bool;
@@ -535,6 +536,15 @@ struct CarParams {
     kf @6 :Float32;
     deadzoneBP @4 :List(Float32);
     deadzoneV @5 :List(Float32);
+
+    gasAccelFactor @7 :Float32;
+    gasVEgoFactor @8 :Float32;
+    gasPitchFactor @9 :Float32;
+    gasOffset @10 :Float32;
+    brakeAccelFactor @11 :Float32;
+    brakeVEgoFactor @12 :Float32;
+    brakePitchFactor @13 :Float32;
+    brakeOffset @14 :Float32;
   }
 
   struct LateralINDITuning {

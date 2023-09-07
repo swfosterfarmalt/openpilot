@@ -90,7 +90,8 @@ class Controls:
         ignore += ['driverCameraState', 'managerState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters', 'testJoystick'] + self.camera_packets,
+                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
+                                     'liveGasParameters', 'testJoystick'] + self.camera_packets,
                                     ignore_alive=ignore, ignore_avg_freq=['radarState', 'testJoystick'])
 
     if CI is None:
@@ -190,7 +191,7 @@ class Controls:
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
     self.can_log_mono_time = 0
-    
+
 
     self.startup_event = get_startup_event(car_recognized, controller_available, len(self.CP.carFw) > 0)
 
@@ -240,13 +241,13 @@ class Controls:
     # no more events while in dashcam mode
     if self.read_only:
       return
-    
+
     # show alert to indicate whether NNFF is loaded
     if not self.nnff_alert_shown and self.sm.frame % 1000 == 0 and self.CP.lateralTuning.which() == 'torque':
       self.nnff_alert_shown = True
       if self.LaC.use_nn:
         self.events.add(EventName.torqueNNFFLoadSuccess)
-      else: 
+      else:
         self.events.add(EventName.torqueNNFFNotLoaded)
 
     # Block resume if cruise never previously enabled
@@ -598,6 +599,11 @@ class Controls:
         self.LaC.update_live_torque_params(torque_params.latAccelFactorFiltered, torque_params.latAccelOffsetFiltered,
                                            torque_params.frictionCoefficientFiltered)
 
+    # Update Gas Params
+    gas_params = self.sm['liveGasParameters']
+    if self.sm.all_checks(['liveGasParameters']):
+      self.LoC.update_live_gas_params(gas_params)
+
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
 
@@ -666,6 +672,12 @@ class Controls:
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
         lac_log.output = actuators.steer
         lac_log.saturated = abs(actuators.steer) >= 0.9
+
+    try:  # FIXME
+      pitch = self.sm['liveLocationKalman'].calibratedOrientationNED.value[1]
+    except IndexError:
+      pitch = 0.0
+    actuators.gas, actuators.brake = self.LoC.get_gas_brake(actuators.accel, CS.vEgo, pitch)
 
     if CS.steeringPressed:
       self.last_steering_pressed_frame = self.sm.frame

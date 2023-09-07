@@ -1995,6 +1995,25 @@ struct LiveTorqueParametersData {
   useParams @12 :Bool;
 }
 
+struct LiveGasParametersData {
+  liveValid @0 :Bool;
+  version @1 :Int32;
+  useParams @2 :Bool;
+  maxResets @3 :Float32;
+  decay @4 :Float32;
+  totalBucketPoints @5 :Float32;
+  gasPoints @6 :List(List(Float32));
+  brakePoints @7 :List(List(Float32));
+  gasAccelFactor @8 :Float32;
+  gasVEgoFactor @9 :Float32;
+  gasPitchFactor @10 :Float32;
+  gasOffset @11 :Float32;
+  brakeAccelFactor @12 :Float32;
+  brakeVEgoFactor @13 :Float32;
+  brakePitchFactor @14 :Float32;
+  brakeOffset @15 :Float32;
+}
+
 struct LiveMapDataDEPRECATED {
   speedLimitValid @0 :Bool;
   speedLimit @1 :Float32;
@@ -2209,6 +2228,7 @@ struct Event {
     gnssMeasurements @91 :GnssMeasurements;
     liveParameters @61 :LiveParametersData;
     liveTorqueParameters @94 :LiveTorqueParametersData;
+    liveGasParameters @124 :LiveGasParametersData;
     cameraOdometry @63 :CameraOdometry;
     thumbnail @66: Thumbnail;
     carEvents @68: List(Car.CarEvent);
