@@ -111,6 +111,10 @@ class ALTERNATIVE_EXPERIENCE:
   DISABLE_DISENGAGE_ON_GAS = 1
   DISABLE_STOCK_AEB = 2
   RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX = 8
+  # PFEIFER - AOL {{
+  ENABLE_ALWAYS_ON_LATERAL = 16
+  AOL_ENABLE_ON_MAIN = 32
+  # }} PFEIFER - AOL
 
 class Panda:
 
@@ -492,10 +496,6 @@ class Panda:
       pass
 
   def flash(self, fn=None, code=None, reconnect=True):
-    if self.up_to_date(fn=fn):
-      logging.debug("flash: already up to date")
-      return
-
     if not fn:
       fn = os.path.join(FW_PATH, self._mcu_type.config.app_fn)
     assert os.path.isfile(fn)
@@ -560,10 +560,9 @@ class Panda:
       serials = Panda.list()
     return True
 
-  def up_to_date(self, fn=None) -> bool:
+  def up_to_date(self) -> bool:
     current = self.get_signature()
-    if fn is None:
-      fn = os.path.join(FW_PATH, self.get_mcu_type().config.app_fn)
+    fn = os.path.join(FW_PATH, self.get_mcu_type().config.app_fn)
     expected = Panda.get_signature_from_firmware(fn)
     return (current == expected)
 
@@ -991,7 +990,3 @@ class Panda:
 
   def force_relay_drive(self, intercept_relay_drive, ignition_relay_drive):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xc5, (int(intercept_relay_drive) | int(ignition_relay_drive) << 1), 0, b'')
-
-  def read_som_gpio(self) -> bool:
-    r = self._handle.controlRead(Panda.REQUEST_IN, 0xc6, 0, 0, 1)
-    return r[0] == 1
