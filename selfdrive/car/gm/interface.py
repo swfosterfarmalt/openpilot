@@ -278,6 +278,13 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
+    elif candidate == CAR.CT6_CC:
+      ret.wheelbase = 3.11
+      ret.mass = 5198. * CV.LB_TO_KG
+      ret.centerToFront = ret.wheelbase * 0.4
+      ret.steerRatio = 17.7
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     if ret.enableGasInterceptor:
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM

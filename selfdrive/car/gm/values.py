@@ -41,7 +41,7 @@ class CarControllerParams:
     self.ZERO_GAS = 2048  # Coasting
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
-    if CP.carFingerprint in CAMERA_ACC_CAR:
+    if CP.carFingerprint in CAMERA_ACC_CAR and CP.carFingerprint not in CC_ONLY_CAR:
       self.MAX_GAS = 3400
       self.MAX_ACC_REGEN = 1514
       self.INACTIVE_REGEN = 1554
@@ -98,6 +98,7 @@ class CAR(StrEnum):
   SUBURBAN = "CHEVROLET SUBURBAN PREMIER 2016"
   SUBURBAN_CC = "CHEVROLET SUBURBAN NO ACC"
   YUKON_CC = "GMC YUKON NO ACC"
+  CT6_CC = "CADILLAC CT6 NO ACC"
 
 
 class Footnote(Enum):
@@ -147,6 +148,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.SUBURBAN: GMCarInfo("Chevrolet Suburban Premier 2016-2020"),
   CAR.SUBURBAN_CC: GMCarInfo("Chevrolet Suburban No ACC"),
   CAR.YUKON_CC: GMCarInfo("GMC Yukon No ACC"),
+  CAR.CT6_CC: GMCarInfo("Cadillac CT6 No ACC"),
 }
 
 
@@ -356,6 +358,11 @@ FINGERPRINTS = {
   {
     193: 8, 197: 8, 201: 8, 208: 8, 209: 7, 211: 2, 241: 6, 249: 8, 288: 5, 298: 8, 304: 1, 309: 8, 311: 8, 313: 8, 320: 3, 322: 7, 328: 1, 352: 5, 381: 6, 384: 4, 386: 8, 388: 8, 413: 8, 451: 8, 452: 8, 453: 6, 455: 7, 460: 5, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 493: 8, 497: 8, 500: 6, 501: 8, 510: 8, 532: 6, 562: 8, 563: 5, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 707: 8, 717: 5, 761: 7, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 869: 4, 977: 8, 1001: 8, 1017: 8, 1020: 8, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1265: 8, 1267: 1, 1280: 4, 1300: 8
   }],
+  CAR.CT6_CC: [
+  # badgers4life's 2017 CT6
+  {
+    190: 6, 193: 8, 197: 8, 199: 4, 201: 8, 209: 7, 211: 2, 241: 6, 249: 8, 288: 5, 289: 8, 298: 8, 304: 1, 309: 8, 311: 8, 313: 8, 320: 3, 322: 4, 328: 1, 352: 5, 381: 6, 384: 4, 386: 8, 388: 8, 389: 2, 393: 7, 398: 8, 407: 7, 413: 8, 417: 7, 419: 1, 422: 4, 426: 7, 431: 8, 442: 8, 451: 8, 452: 8, 453: 6, 455: 7, 456: 8, 460: 5, 462: 4, 463: 3, 479: 3, 481: 7, 485: 8, 487: 8, 489: 8, 495: 4, 497: 8, 499: 3, 500: 6, 501: 8, 508: 8, 528: 4, 532: 6, 554: 3, 560: 8, 562: 8, 563: 5, 564: 5, 565: 5, 567: 3, 573: 1, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 647: 6, 707: 8, 717: 5, 723: 2, 753: 5, 761: 7, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 866: 4, 869: 4, 961: 8, 969: 8, 977: 8, 979: 7, 985: 5, 1001: 8, 1005: 6, 1009: 8, 1011: 6, 1013: 1, 1017: 8, 1019: 2, 1020: 8, 1105: 6, 1217: 8, 1221: 5, 1223: 3, 1225: 7, 1233: 7, 1249: 8, 1257: 6, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 1, 1280: 4, 1300: 8, 1322: 6, 1328: 4, 1417: 8, 1609: 8, 1613: 8, 1649: 8, 1792: 8, 1793: 8, 1798: 8, 1799: 8, 1810: 8, 1813: 8, 1824: 8, 1825: 8, 1840: 8, 1842: 8, 1856: 8, 1858: 8, 1859: 8, 1860: 8, 1862: 8, 1863: 8, 1872: 8, 1875: 8, 1879: 8, 1882: 8, 1888: 4, 1889: 8, 1892: 8, 1906: 7, 1907: 7, 1912: 7, 1914: 7, 1919: 7, 1920: 8, 1924: 8, 1927: 8, 1928: 7, 1937: 8, 1953: 8, 1954: 8, 1955: 8, 1968: 8, 1969: 8, 1971: 8, 1975: 8, 1984: 8, 1988: 8, 2000: 8, 2001: 8, 2002: 8, 2004: 8, 2017: 8, 2018: 8, 2020: 8, 2026: 8
+  }],
 }
 
 GM_RX_OFFSET = 0x400
@@ -365,9 +372,10 @@ DBC[CAR.VOLT] = dbc_dict('gm_global_a_powertrain_volt', 'gm_global_a_object', ch
 DBC[CAR.VOLT_CC] = DBC[CAR.VOLT]
 
 EV_CAR = {CAR.VOLT, CAR.BOLT_EUV, CAR.VOLT_CC, CAR.BOLT_CC}
-CC_ONLY_CAR = {CAR.VOLT_CC, CAR.BOLT_CC, CAR.EQUINOX_CC, CAR.SUBURBAN_CC, CAR.YUKON_CC}
+CC_ONLY_CAR = {CAR.VOLT_CC, CAR.BOLT_CC, CAR.EQUINOX_CC, CAR.SUBURBAN_CC, CAR.YUKON_CC, CAR.CT6_CC}
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
-CAMERA_ACC_CAR = {CAR.BOLT_EUV, CAR.SILVERADO, CAR.EQUINOX, CAR.TRAILBLAZER, CAR.VOLT_CC, CAR.BOLT_CC, CAR.EQUINOX_CC, CAR.YUKON_CC}
+CAMERA_ACC_CAR = {CAR.BOLT_EUV, CAR.SILVERADO, CAR.EQUINOX, CAR.TRAILBLAZER}
+CAMERA_ACC_CAR.update({CAR.VOLT_CC, CAR.BOLT_CC, CAR.EQUINOX_CC, CAR.YUKON_CC, CAR.CT6_CC})
 
 STEER_THRESHOLD = 1.0
