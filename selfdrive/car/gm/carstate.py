@@ -162,7 +162,7 @@ class CarState(CarStateBase):
     if CP.transmissionType == TransmissionType.direct:
       messages += [
         ("EBCMRegenPaddle", 50),
-        ("EVDriveMode", 1),
+        ("EVDriveMode", 0),  # Fixme: this signal does not seem to be present on all cars
       ]
 
     if CP.enableGasInterceptor:
