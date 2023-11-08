@@ -91,6 +91,10 @@ class CarController:
           # ASCM sends max regen when not enabled
           self.pcm_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
+        elif self.CP.enableGasInterceptor:
+          self.pcm_gas = self.params.INACTIVE_REGEN
+          self.interceptor_gas = interp(actuators, self.params.GAS_LOOKUP_BP, self.params.PEDAL_GAS_LOOKUP_V)
+          self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
         else:
           self.pcm_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
           self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
@@ -102,9 +106,6 @@ class CarController:
         idx = (self.frame // 4) % 4
 
         if self.CP.enableGasInterceptor:
-          # TODO: need to make this align better with regen thresholds
-          self.interceptor_gas = clip((self.pcm_gas - self.params.INACTIVE_REGEN) / (self.params.MAX_GAS - self.params.INACTIVE_REGEN), 0., 1.)
-          self.pcm_gas = self.params.INACTIVE_REGEN
           can_sends.append(create_gas_interceptor_command(self.packer_pt, self.interceptor_gas, idx))
 
         at_full_stop = CC.longActive and CS.out.standstill
