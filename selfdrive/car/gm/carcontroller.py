@@ -42,21 +42,6 @@ class CarController:
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint]['chassis'])
 
-  @staticmethod
-  def calc_pedal_command(accel: float, long_active: bool) -> float:
-    if not long_active: return 0.
-
-    zero = 0.15625  # 40/256
-    if accel > 0.:
-      # Scales the accel from 0-1 to 0.156-1
-      pedal_gas = clip(((1 - zero) * accel + zero), 0., 1.)
-    else:
-      # if accel is negative, -0.1 -> 0.015625
-      pedal_gas = clip(zero + accel, 0., zero)  # Make brake the same size as gas, but clip to regen
-
-    return pedal_gas
-
-
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
@@ -105,90 +90,22 @@ class CarController:
       # Gas/regen, brakes, and UI commands - all at 25Hz
       if self.frame % 4 == 0:
         stopping = actuators.longControlState == LongCtrlState.stopping
-        at_full_stop = CC.longActive and CS.out.standstill
-        near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
-        interceptor_gas_cmd = 0
         if not CC.longActive:
           # ASCM sends max regen when not enabled
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
-        elif near_stop and stopping and not CC.cruiseControl.resume:
-          self.apply_gas = self.params.INACTIVE_REGEN
-          self.apply_brake = int(min(-100 * self.CP.stopAccel, self.params.MAX_BRAKE))
         else:
-          # Normal operation
-          if self.CP.carFingerprint in EV_CAR:
-            self.params.update_ev_gas_brake_threshold(CS.out.vEgo)
-            self.apply_gas = int(round(interp(actuators.accel, self.params.EV_GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-            self.apply_brake = int(round(interp(actuators.accel, self.params.EV_BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
-          else:
-            self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-            self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
+          self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
+          self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
           # Don't allow any gas above inactive regen while stopping
           # FIXME: brakes aren't applied immediately when enabling at a stop
           if stopping:
             self.apply_gas = self.params.INACTIVE_REGEN
-          if self.CP.carFingerprint in CC_ONLY_CAR:
-            # gas interceptor only used for full long control on cars without ACC
-            interceptor_gas_cmd = self.calc_pedal_command(actuators.accel, CC.longActive)
-
-        if CC.cruiseControl.resume and actuators.longControlState == LongCtrlState.starting:
-          interceptor_gas_cmd = self.params.SNG_INTERCEPTOR_GAS
-          self.apply_brake = 0
-
-        idx = (self.frame // 4) % 4
 
         if self.CP.flags & GMFlags.CC_LONG.value:
           if CC.longActive and CS.out.vEgo > self.CP.minEnableSpeed:
             # Using extend instead of append since the message is only sent intermittently
             can_sends.extend(gmcan.create_gm_cc_spam_command(self.packer_pt, self, CS, actuators))
-        if self.CP.enableGasInterceptor:
-          can_sends.append(create_gas_interceptor_command(self.packer_pt, interceptor_gas_cmd, idx))
-        if self.CP.carFingerprint not in CC_ONLY_CAR:
-          friction_brake_bus = CanBus.CHASSIS
-          # GM Camera exceptions
-          # TODO: can we always check the longControlState?
-          if self.CP.networkLocation == NetworkLocation.fwdCamera and self.CP.carFingerprint not in CC_ONLY_CAR:
-            at_full_stop = at_full_stop and stopping
-            friction_brake_bus = CanBus.POWERTRAIN
-
-          # GasRegenCmdActive needs to be 1 to avoid cruise faults. It describes the ACC state, not actuation
-          can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, CC.enabled, at_full_stop))
-          can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, friction_brake_bus, self.apply_brake,
-                                                             idx, CC.enabled, near_stop, at_full_stop, self.CP))
-
-          # Send dashboard UI commands (ACC status)
-          send_fcw = hud_alert == VisualAlert.fcw
-          can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, CC.enabled, CS.longitudinal_personality,
-                                                              hud_v_cruise * CV.MS_TO_KPH, hud_control.leadVisible, send_fcw))
-
-      # Radar needs to know current speed and yaw rate (50hz),
-      # and that ADAS is alive (10hz)
-      if not self.CP.radarUnavailable:
-        tt = self.frame * DT_CTRL
-        time_and_headlights_step = 10
-        if self.frame % time_and_headlights_step == 0:
-          idx = (self.frame // time_and_headlights_step) % 4
-          can_sends.append(gmcan.create_adas_time_status(CanBus.OBSTACLE, int((tt - self.start_time) * 60), idx))
-          can_sends.append(gmcan.create_adas_headlights_status(self.packer_obj, CanBus.OBSTACLE))
-
-        speed_and_accelerometer_step = 2
-        if self.frame % speed_and_accelerometer_step == 0:
-          idx = (self.frame // speed_and_accelerometer_step) % 4
-          can_sends.append(gmcan.create_adas_steering_status(CanBus.OBSTACLE, idx))
-          can_sends.append(gmcan.create_adas_accelerometer_speed_status(CanBus.OBSTACLE, CS.out.vEgo, idx))
-
-      if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.params.ADAS_KEEPALIVE_STEP == 0:
-        can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
-
-      # TODO: integrate this with the code block below?
-      if (
-          (self.CP.flags & GMFlags.PEDAL_LONG.value)  # Always cancel stock CC when using pedal interceptor
-          or (self.CP.flags & GMFlags.CC_LONG.value and not CC.enabled)  # Cancel stock CC if OP is not active
-      ) and CS.out.cruiseState.enabled:
-        if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
-          self.last_button_frame = self.frame
-          can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, (CS.buttons_counter + 1) % 4, CruiseButtons.CANCEL))
 
     else:
       # While car is braking, cancel button causes ECM to enter a soft disable state with a fault status.
@@ -199,10 +116,7 @@ class CarController:
       if (self.frame - self.last_button_frame) * DT_CTRL > 0.04:
         if self.cancel_counter > CAMERA_CANCEL_DELAY_FRAMES:
           self.last_button_frame = self.frame
-          if self.CP.carFingerprint in SDGM_CAR:
-            can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.POWERTRAIN, CS.buttons_counter, CruiseButtons.CANCEL))
-          else:
-            can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.buttons_counter, CruiseButtons.CANCEL))
+          can_sends.append(gmcan.create_buttons(self.packer_pt, CanBus.CAMERA, CS.buttons_counter, CruiseButtons.CANCEL))
 
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       # Silence "Take Steering" alert sent by camera, forward PSCMStatus with HandsOffSWlDetectionStatus=1
